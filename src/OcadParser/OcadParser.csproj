@@ -39,13 +39,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="OcadFileHeader.cs" />
+    <Compile Include="Symbol\AreaSymbol.cs" />
+    <Compile Include="Symbol\BaseSymbol.cs" />
+    <Compile Include="BinaryParser.cs" />
+    <Compile Include="Symbol\SymbolIndexBlock.cs" />
     <Compile Include="FileType.cs" />
-    <Compile Include="IOcadParser.cs" />
+    <Compile Include="IBinaryParsable.cs" />
+    <Compile Include="Symbol\LineSymbol.cs" />
+    <Compile Include="Symbol\LineTextSymbol.cs" />
+    <Compile Include="ObjectIndexBlock.cs" />
+    <Compile Include="ObjectIndexItem.cs" />
+    <Compile Include="ObjectTypes.cs" />
+    <Compile Include="OcadFile.cs" />
     <Compile Include="OcadStreamReader.cs" />
+    <Compile Include="Symbol\PointSymbol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Symbol\RectangleSymbol.cs" />
     <Compile Include="TdPoly.cs" />
     <Compile Include="TdPolyPoint.cs" />
+    <Compile Include="Symbol\TextSymbol.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

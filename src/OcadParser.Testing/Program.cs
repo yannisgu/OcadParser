@@ -17,6 +17,7 @@ namespace OcadParser.Testing
                 var reader = new OcadStreamReader(stream);
                 var parser = new BinaryParser<OcadFile>();
 
+
                 var file = parser.Read(reader);
             }
         }
