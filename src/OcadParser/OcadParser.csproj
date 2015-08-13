@@ -39,6 +39,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\AreaSymbol.cs" />
+    <Compile Include="Models\CourseSetting\Course.cs" />
+    <Compile Include="Models\CourseSetting\CourseSettingObject.cs" />
+    <Compile Include="Models\CourseSetting\OcadCourseSettingProject.cs" />
+    <Compile Include="Models\FileLineSymbol.cs" />
+    <Compile Include="Models\FileLineTextSymbol.cs" />
+    <Compile Include="Models\FileTextSymbol.cs" />
+    <Compile Include="Models\OcadBaseModel.cs" />
+    <Compile Include="Models\OcadObject.cs" />
+    <Compile Include="Models\OMap\OcadOMap.cs" />
+    <Compile Include="Models\PointSymbol.cs" />
+    <Compile Include="Models\RectangleSymbol.cs" />
+    <Compile Include="Models\Symbol.cs" />
     <Compile Include="OcadFileHeader.cs" />
     <Compile Include="OcadFileOcadObject.cs" />
     <Compile Include="SpecialStrings\OcadFileSpecialString.cs" />

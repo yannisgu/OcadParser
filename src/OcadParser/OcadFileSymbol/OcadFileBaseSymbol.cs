@@ -66,11 +66,11 @@ namespace OcadParser
 
         public Byte notUsed2 { get; set; }
 
-        public Int16 nColors { get; set; } // Number of colors of the symbol max. 14, -1: the number of colors is > 14
+        public byte nColors { get; set; } // Number of colors of the symbol max. 14, -1: the number of colors is > 14
 
         public Int16[] Colors { get; set; } // Colors of the symbol
 
-        public Int16[] Description { get; set; } // Description text                        
+        public char[] Description { get; set; } // Description text                        
 
         public byte[] IconBits { get; set; } // Each byte represents a pixel of the icon in a 256 color palette
 

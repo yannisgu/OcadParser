@@ -65,7 +65,7 @@ namespace OcadParser
                 {
                     reader.ReadUntil(index.Pos);
                     var bytes = reader.ReadBytes(index.Len);
-                    list.Add(new OcadFileSpecialString(bytes, index.RecType));
+                    list.Add(new OcadFileSpecialString(bytes, index.RecType, index.ObjIndex));
                 }
 
                 property.SetValue(returnValue, list);
@@ -129,6 +129,10 @@ namespace OcadParser
                 var indexes = getIndexes(returnValue);
                 foreach (var index in indexes)
                 {
+                    if (index == 0)
+                    {
+                        continue;
+                    }
                     reader.ReadUntil(index);
 
                     var itemValue = this.ReadPropertyValue(reader, itemType, null, returnValue);
@@ -216,6 +220,10 @@ namespace OcadParser
             else if (type == typeof(ushort))
             {
                 propertyValue = reader.ReadWord();
+            }
+            else if (type == typeof (char))
+            {
+                propertyValue = reader.ReadChar();
             }
             else if (type == typeof(bool))
             {

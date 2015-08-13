@@ -1,4 +1,6 @@
-﻿namespace OcadParser
+﻿using System.Collections.Generic;
+
+namespace OcadParser
 {
     public class CsObjectSSR : OcadFileSpecialStringRecord
     {
@@ -37,73 +39,128 @@
         [OcadFileSpecialStringMapping("v")]
         public string IsElevationUserUsed { get; set; }
     }
+
     public class CourseSSR : OcadFileSpecialStringRecord
     {
-        public override void SetFirst(string value) { CourseName = value; }
+        public override void SetFirst(string value)
+        {
+            CourseName = value;
+        }
+
         public string CourseName { get; set; }
+
         [OcadFileSpecialStringMapping("C")]
         public string Climb { get; set; }
+
         [OcadFileSpecialStringMapping("E")]
         public string ExtraDistance { get; set; }
+
         [OcadFileSpecialStringMapping("F")]
         public string FromStartNumber { get; set; }
+
         [OcadFileSpecialStringMapping("H")]
         public string ClassNameForControlDescription { get; set; }
+
         [OcadFileSpecialStringMapping("K")]
         public string Combination { get; set; }
+
         [OcadFileSpecialStringMapping("M")]
         public string MapFile { get; set; }
+
         [OcadFileSpecialStringMapping("R")]
         public string NumberOfRunnersTeams { get; set; }
+
         [OcadFileSpecialStringMapping("S")]
         public string MapScale { get; set; }
+
         [OcadFileSpecialStringMapping("T")]
         public string ToStartNumber { get; set; }
+
         [OcadFileSpecialStringMapping("Y")]
         public string CourseType { get; set; }
+
         [OcadFileSpecialStringMapping("L")]
         public string NumberOfLegs { get; set; }
+
         [OcadFileSpecialStringMapping("s")]
         public string Start { get; set; }
+
         [OcadFileSpecialStringMapping("c")]
-        public string Control { get; set; }
+        public List<string> Controls { get; set; }
+
         [OcadFileSpecialStringMapping("m")]
         public string MarkedRoute { get; set; }
+
         [OcadFileSpecialStringMapping("k")]
         public string MandatoryCrossingPoint { get; set; }
+
         [OcadFileSpecialStringMapping("w")]
         public string MandatoryPassageThroughOutOfBoundsArea { get; set; }
+
         [OcadFileSpecialStringMapping("g")]
         public string MapChange { get; set; }
+
         [OcadFileSpecialStringMapping("f")]
         public string Finish { get; set; }
+
         [OcadFileSpecialStringMapping("l")]
         public string LegVariationStarts { get; set; }
+
         [OcadFileSpecialStringMapping("b")]
         public string BranchOfALegVariationStarts { get; set; }
+
         [OcadFileSpecialStringMapping("p")]
         public string EndOfALegVariation { get; set; }
+
         [OcadFileSpecialStringMapping("r")]
         public string RelayVariationStarts { get; set; }
+
         [OcadFileSpecialStringMapping("v")]
         public string BranchOfARelayVariationStarts { get; set; }
+
         [OcadFileSpecialStringMapping("q")]
         public string EndOfARelayVariation { get; set; }
+
         [OcadFileSpecialStringMapping("e")]
         public string UsedInternallyOnly1 { get; set; }
+
         [OcadFileSpecialStringMapping("i")]
         public string UsedInternallyOnly2 { get; set; }
+
         [OcadFileSpecialStringMapping("j")]
         public string UsedInternallyOnly3 { get; set; }
+
         [OcadFileSpecialStringMapping("n")]
         public string CourseNameObject { get; set; }
+
         [OcadFileSpecialStringMapping("u")]
         public string StartNumberObject { get; set; }
+
         [OcadFileSpecialStringMapping("t")]
         public string TextBlockForControlDescription { get; set; }
+
         [OcadFileSpecialStringMapping("o")]
         public string OtherObject { get; set; }
+
+        [OcadFileSpecialStringMapping("s",
+            "c",
+            "m",
+            "k",
+            "w",
+            "g",
+            "f",
+            "l",
+            "b",
+            "p",
+            "r",
+            "v",
+            "q",
+            "e",
+            "i",
+            "j")]
+        public List<string> CourseSettingObjects { get; set; }
     }
+
     public class CsClassSSR : OcadFileSpecialStringRecord
     {
         public override void SetFirst(string value) { ClassName = value; }

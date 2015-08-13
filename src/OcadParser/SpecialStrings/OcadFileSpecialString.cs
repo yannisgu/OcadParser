@@ -9,17 +9,19 @@ namespace OcadParser
     {
         public int RecordType { get; private set; }
         public string OriginalString { get; private set; }
+        public int ObjectIndex { get; private set; }
         
 
         public OcadFileSpecialStringRecord Record { get; private set; }
 
-        public OcadFileSpecialString(IEnumerable<byte> bytes, int recordType)
+        public OcadFileSpecialString(IEnumerable<byte> bytes, int recordType, int objectIndex)
         {
             RecordType = recordType;
+            ObjectIndex = objectIndex;
             OriginalString = System.Text.Encoding.UTF8.GetString(bytes.ToArray());
             OriginalString = OriginalString.TrimEnd('\0');
 
-            var fields = new Dictionary<string, string>();
+            var fields = new List<KeyValuePair<string, string>>();
             var parts = OriginalString.Split('\t');
             var first = parts[0];
             for (var i = 1; i < parts.Length; i++)
@@ -27,7 +29,7 @@ namespace OcadParser
                 var part = parts[i].Trim();
                 if (!string.IsNullOrEmpty(part))
                 {
-                    fields[part[0].ToString()] = part.Substring(1);
+                    fields.Add(new KeyValuePair<string, string>(part[0].ToString(), part.Substring(1)));
                 }
             }
 
@@ -43,9 +45,14 @@ namespace OcadParser
                             .FirstOrDefault();
                     if (attr != null)
                     {
-                        if (fields.ContainsKey(attr.Letter))
+                        var fieldValues = fields.Where(_ => attr.Letters.Contains(_.Key)).Select(_ => _.Value);
+                        if (property.PropertyType == typeof (List<string>))
                         {
-                            property.SetValue(Record, fields[attr.Letter]);
+                            property.SetValue(Record, fieldValues.ToList());
+                        }
+                        else
+                        {
+                            property.SetValue(Record, string.Join(" ", fieldValues));
                         }
                     }
                 }

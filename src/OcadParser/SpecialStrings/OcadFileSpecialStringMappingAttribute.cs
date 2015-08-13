@@ -4,11 +4,11 @@ namespace OcadParser
 {
     public class OcadFileSpecialStringMappingAttribute : Attribute
     {
-        public string Letter { get; set; }
+        public string[] Letters { get; set; }
 
-        public OcadFileSpecialStringMappingAttribute(string letter)
+        public OcadFileSpecialStringMappingAttribute(params string[] letters)
         {
-            Letter = letter;
+            Letters = letters;
         }
     }
 }

@@ -49,6 +49,12 @@ namespace OcadParser
             return BitConverter.ToUInt16(buffer, 0);
         }
 
+        public virtual char ReadChar()
+        {
+            var value = ReadSmallInt();
+            return (char) value;
+        }
+
         public virtual bool ReadWordBool()
         {
             byte[] buffer = new byte[2];
