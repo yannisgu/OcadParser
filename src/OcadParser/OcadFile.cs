@@ -11,15 +11,23 @@ namespace OcadParser
 
         public ObjectIndexBlock[] ObjectIndex { get; set; }
 
-        public List<BaseSymbol> Symbols { get; set; } 
+        public List<BaseSymbol> Symbols { get; set; }
+
+        public StringIndexBlocks[] StringIndex { get; set; }
+
+        public List<string> Strings { get; set; } 
 
         public void SetupBinaryParser(BinaryParser<OcadFile> parser)
         {
             parser.SetPropertyOrder((_ => _.FileHeader));
             parser.SetStartIndex((_ => _.SymbolIndex), (_ => _.FileHeader.PositionFirstSymbolIndexBlock));
             parser.SetStartIndex((_ => _.ObjectIndex), (_ => _.FileHeader.PositionObjectIndexBlock));
+            parser.SetStartIndex(_ => _.StringIndex, _ => (int)_.FileHeader.PositionFirstStringIndexBlock);
             parser.SetIndexes(_ => _.SymbolIndex, _ => _.SymbolIndex.Select(s => s.NextSymbolIndex));
             parser.SetIndexes(_ => _.ObjectIndex, _ => _.ObjectIndex.Select(o => o.NextObjectIndexBlock));
+            parser.SetIndexes(_ => _.StringIndex, _ => _.StringIndex.Select(o => o.NextIndexBlock));
+
+            parser.ConfigureList(_ => _.Strings, _ => _.StringIndex.SelectMany(i => i.Table.Select(t => t.Pos)));
 
             parser.ConfigureList(
                 _ => _.Symbols,

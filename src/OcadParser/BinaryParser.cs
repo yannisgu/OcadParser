@@ -275,11 +275,14 @@ namespace OcadParser
         Dictionary<string, Func<T, IEnumerable<int>>> listIndexes = new Dictionary<string, Func<T, IEnumerable<int>>>();
         Dictionary<string, Func<object, Type>> listTypeMappings = new Dictionary<string, Func<object, Type>>();
 
-        public BinaryParser<T> ConfigureList<T2>(Expression<Func<T, IList<T2>>> property, Func<T, IEnumerable<int>> getIndexes, Func<T2, Type> castMapping)
+        public BinaryParser<T> ConfigureList<T2>(Expression<Func<T, IList<T2>>> property, Func<T, IEnumerable<int>> getIndexes, Func<T2, Type> castMapping = null)
         {
             var name = GetPropertyName(property);
             this.listIndexes[name] = getIndexes;
-            this.listTypeMappings[name] = BuildAccessor<object, Type>(castMapping.Method);
+            if (castMapping != null)
+            {
+                this.listTypeMappings[name] = BuildAccessor<object, Type>(castMapping.Method);
+            }
             return this;
         }
 

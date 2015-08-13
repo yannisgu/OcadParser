@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="OcadFileHeader.cs" />
+    <Compile Include="StringIndexBlocks.cs" />
     <Compile Include="Symbol\AreaSymbol.cs" />
     <Compile Include="Symbol\BaseSymbol.cs" />
     <Compile Include="BinaryParser.cs" />
