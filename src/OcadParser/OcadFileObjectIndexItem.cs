@@ -2,7 +2,7 @@ namespace OcadParser
 {
     using System;
 
-    public class ObjectIndexItem :IBinaryParsable<ObjectIndexItem>
+    public class OcadFileObjectIndexItem :IBinaryParsable<OcadFileObjectIndexItem>
     {
         public int RectLLx { get; set; }
         public int RectLLy { get; set; }
@@ -26,7 +26,7 @@ namespace OcadParser
         public byte LayoutFont { get; set; }
         public byte Res2 { get; set; }
 
-        public void SetupBinaryParser(BinaryParser<ObjectIndexItem> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileObjectIndexItem> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.RectLLx,

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace OcadParser
 {
     using System;
@@ -88,6 +90,14 @@ namespace OcadParser
         public void ReadUntil(int position)
         {
             this.Stream.Position = position;
+        }
+
+        public IEnumerable<byte> ReadBytes(int len)
+        {
+            for (var i = 0; i < len; i++)
+            {
+                yield return ReadByte();
+            }
         }
     }
 }

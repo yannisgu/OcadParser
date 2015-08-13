@@ -12,7 +12,7 @@ namespace OcadParser.Testing
     {
         static void Main(string[] args)
         {
-            using (var stream = new FileStream(@"C:\Users\Yannis\SkyDrive\OL\OLGM\MurtnerOl\Murtner OL.ocd", FileMode.Open))
+            using (var stream = new FileStream(@"D:\OneDrive\OL\OLGM\MurtnerOl\Murtner OL 2014.ocd", FileMode.Open))
             {
                 var reader = new OcadStreamReader(stream);
                 var parser = new BinaryParser<OcadFile>();

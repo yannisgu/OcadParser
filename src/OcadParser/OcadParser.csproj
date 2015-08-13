@@ -40,26 +40,32 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="OcadFileHeader.cs" />
-    <Compile Include="StringIndexBlocks.cs" />
-    <Compile Include="Symbol\AreaSymbol.cs" />
-    <Compile Include="Symbol\BaseSymbol.cs" />
+    <Compile Include="OcadFileOcadObject.cs" />
+    <Compile Include="SpecialStrings\OcadFileSpecialString.cs" />
+    <Compile Include="SpecialStrings\OcadFileSpecialStringMappingAttribute.cs" />
+    <Compile Include="SpecialStrings\OcadFileStringIndexBlocks.cs" />
+    <Compile Include="SpecialStrings\OcadFileSpecialStringRecord.cs" />
+    <Compile Include="SpecialStrings\OcadFileSpecialStringTypes.cs" />
+    <Compile Include="SpecialStrings\OcadFileStringIndex.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileAreaSymbol.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileBaseSymbol.cs" />
     <Compile Include="BinaryParser.cs" />
-    <Compile Include="Symbol\SymbolIndexBlock.cs" />
-    <Compile Include="FileType.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileSymbolIndexBlock.cs" />
+    <Compile Include="OcadFileFileType.cs" />
     <Compile Include="IBinaryParsable.cs" />
-    <Compile Include="Symbol\LineSymbol.cs" />
-    <Compile Include="Symbol\LineTextSymbol.cs" />
-    <Compile Include="ObjectIndexBlock.cs" />
-    <Compile Include="ObjectIndexItem.cs" />
-    <Compile Include="ObjectTypes.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileLineSymbol.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileLineTextSymbol.cs" />
+    <Compile Include="OcadFileObjectIndexBlock.cs" />
+    <Compile Include="OcadFileObjectIndexItem.cs" />
+    <Compile Include="OcadFileObjectTypes.cs" />
     <Compile Include="OcadFile.cs" />
     <Compile Include="OcadStreamReader.cs" />
-    <Compile Include="Symbol\PointSymbol.cs" />
+    <Compile Include="OcadFileSymbol\OcadFilePointSymbol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Symbol\RectangleSymbol.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileRectangleSymbol.cs" />
     <Compile Include="TdPoly.cs" />
     <Compile Include="TdPolyPoint.cs" />
-    <Compile Include="Symbol\TextSymbol.cs" />
+    <Compile Include="OcadFileSymbol\OcadFileTextSymbol.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

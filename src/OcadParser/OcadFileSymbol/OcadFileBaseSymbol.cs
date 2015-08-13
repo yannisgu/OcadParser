@@ -2,7 +2,7 @@ namespace OcadParser
 {
     using System;
 
-    public class BaseSymbol : IBinaryParsable<BaseSymbol>
+    public class OcadFileBaseSymbol : IBinaryParsable<OcadFileBaseSymbol>
     {
         public Int16 Group { get; set; }
 
@@ -77,7 +77,7 @@ namespace OcadParser
         public ushort[] SymbolTreeGroup { get; set; } // Group ID in the symbol tree, max 64 symbol groups 
 
 
-        public void SetupBinaryParser(BinaryParser<BaseSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileBaseSymbol> parser)
         {
             parser.SetPropertyOrder(_ => _.Size, _ => _.SymNum, _ => _.Otp);
         }

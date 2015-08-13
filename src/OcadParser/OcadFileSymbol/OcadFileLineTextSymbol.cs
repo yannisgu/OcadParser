@@ -2,7 +2,7 @@ namespace OcadParser
 {
     using System;
 
-    public class LineTextSymbol : BaseSymbol, IBinaryParsable<LineTextSymbol>
+    public class OcadFileLineTextSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileLineTextSymbol>
     {
         public char[] FontName { get; set; } // TrueType font
 
@@ -57,7 +57,7 @@ namespace OcadParser
 
         public Int16 FrOfY { get; set; } // Vertical offset for shadow framing
 
-        public void SetupBinaryParser(BinaryParser<LineTextSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileLineTextSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.Size,

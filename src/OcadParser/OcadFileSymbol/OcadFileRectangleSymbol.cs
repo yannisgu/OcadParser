@@ -2,7 +2,7 @@ namespace OcadParser
 {
     using System;
 
-    public class RectangleSymbol : BaseSymbol, IBinaryParsable<RectangleSymbol>
+    public class OcadFileRectangleSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileRectangleSymbol>
     {
         public  Int16 LineColor {get;set;}                   // Line color
         public  Int16 LineWidth {get;set;}                   // Line width
@@ -28,7 +28,7 @@ namespace OcadParser
         public  Int16 Res5 {get;set;}                        // not used
         public  Int16 Res6 {get;set;}                        // not used
 
-        public void SetupBinaryParser(BinaryParser<RectangleSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileRectangleSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.Size,

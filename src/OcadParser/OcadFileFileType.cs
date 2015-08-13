@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OcadParser
 {
-    public enum FileType
+    public enum OcadFileFileType
     {
         Normal = 0,
         CourseSetting= 1,

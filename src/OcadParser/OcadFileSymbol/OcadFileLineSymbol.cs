@@ -2,7 +2,7 @@
 {
     using System;
 
-    public class LineSymbol : BaseSymbol, IBinaryParsable<LineSymbol>
+    public class OcadFileLineSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileLineSymbol>
     {
         public Int16 LineColor { get; set; } // Line color
 
@@ -102,7 +102,7 @@
 
         // 1 = end symbol, 2 = start symbol, 4 = corner symbol, 8 = secondary symbol   
 
-        public void SetupBinaryParser(BinaryParser<LineSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileLineSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.Size,

@@ -2,7 +2,7 @@ namespace OcadParser
 {
     using System;
 
-    public class TextSymbol : BaseSymbol, IBinaryParsable<TextSymbol>
+    public class OcadFileTextSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileTextSymbol>
     {
         public char[] FontName { get; set; } // TrueType font
 
@@ -92,7 +92,7 @@ namespace OcadParser
 
         public Int16 FrOfY { get; set; } // Vertical offset for shadow framing
 
-        public void SetupBinaryParser(BinaryParser<TextSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileTextSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.FontName,

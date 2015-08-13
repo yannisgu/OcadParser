@@ -3,7 +3,7 @@ namespace OcadParser
     using System;
     using System.Net.Mime;
 
-    public class AreaSymbol : BaseSymbol, IBinaryParsable<AreaSymbol>
+    public class OcadFileAreaSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileAreaSymbol>
     {
         public int BorderSym { get; set; } // Symbol for border line  activated if BorderOn is true
 
@@ -44,7 +44,7 @@ namespace OcadParser
         // number of coordinates (each 8 bytes) which follow this structure, each object header
         // counts as 2 Coordinates (16 bytes)
 
-        public void SetupBinaryParser(BinaryParser<AreaSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFileAreaSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.Size,

@@ -1,8 +1,8 @@
 namespace OcadParser
 {
-    public class PointSymbol : BaseSymbol, IBinaryParsable<PointSymbol>
+    public class OcadFilePointSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFilePointSymbol>
     {
-        public void SetupBinaryParser(BinaryParser<PointSymbol> parser)
+        public void SetupBinaryParser(BinaryParser<OcadFilePointSymbol> parser)
         {
             parser.SetPropertyOrder(
                 _ => _.Size,

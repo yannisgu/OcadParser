@@ -1,6 +1,6 @@
 namespace OcadParser
 {
-    public class ObjectTypes
+    public class OcadFileObjectTypes
     {
         public const byte Point = 1;
         public const byte Line = 2;

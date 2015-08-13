@@ -11,7 +11,7 @@ namespace OcadParser
         where T : IBinaryParsable<T>
     {
         private Expression<Func<T, object>>[] propertyOrder;
-        private Dictionary<string, int> arrayLengths = new Dictionary<string, int>();
+        private Dictionary<string, Func<T, int>> arrayLengths = new Dictionary<string, Func<T, int>>();
         private Dictionary<string, Expression<Func<T, int>>> propertyStartIndexes = new Dictionary<string, Expression<Func<T, int>>>();
 
         private Dictionary<string, Expression<Func<T, IEnumerable<int>>>> propertyIndexes =
@@ -47,8 +47,35 @@ namespace OcadParser
             this.ReadAllIndexBlocks(reader, returnValue);
 
             this.ReadAllLists(returnValue, reader);
+
+            ReadSpecialStringLists(returnValue, reader);
             
             return returnValue;
+        }
+
+        private void ReadSpecialStringLists(T returnValue, OcadStreamReader reader)
+        {
+            foreach (var listProperty in this.specialStringListMapping.Keys)
+            {
+                var property = typeof(T).GetProperty(GetPropertyName(listProperty));
+                var list = new List<OcadFileSpecialString>();
+                var getIndexes = this.specialStringListMapping[listProperty];
+                var indexes = getIndexes.Compile()(returnValue);
+                foreach (var index in indexes)
+                {
+                    reader.ReadUntil(index.Pos);
+                    var bytes = reader.ReadBytes(index.Len);
+                    list.Add(new OcadFileSpecialString(bytes, index.RecType));
+                }
+
+                property.SetValue(returnValue, list);
+            }
+        }
+
+        public BinaryParser<T> SetArrayLength(Expression<Func<T, object>> property, Func<T, int> function)
+        {
+            this.arrayLengths[GetPropertyName(property)] = function;
+            return this;
         }
 
         private void ReadSimplePropertiesByOrder(OcadStreamReader reader, T returnValue)
@@ -104,14 +131,14 @@ namespace OcadParser
                 {
                     reader.ReadUntil(index);
 
-                    var itemValue = this.ReadPropertyValue(reader, itemType, null);
+                    var itemValue = this.ReadPropertyValue(reader, itemType, null, returnValue);
                     if (this.listTypeMappings.ContainsKey(listPropertyName))
                     {
                         var newType = this.listTypeMappings[listPropertyName](itemValue);
                         if (newType != null)
                         {
                             reader.ReadUntil(index);
-                            itemValue = this.ReadPropertyValue(reader, newType, null);
+                            itemValue = this.ReadPropertyValue(reader, newType, null, returnValue);
                         }
 
                     }
@@ -130,7 +157,7 @@ namespace OcadParser
         {
             var property = typeof(T).GetProperty(key);
             var type = property.PropertyType.GetElementType();
-            var value = this.ReadPropertyValue(reader, type, key);
+            var value = this.ReadPropertyValue(reader, type, key, item);
             var oldArray = (Array)property.GetValue(item);
             if (oldArray == null)
             {
@@ -150,12 +177,12 @@ namespace OcadParser
         {
             var property = typeof(T).GetProperty(propertyName);
             var type = property.PropertyType;
-            var propertyValue = this.ReadPropertyValue(reader, type, propertyName);
+            var propertyValue = this.ReadPropertyValue(reader, type, propertyName, value);
 
             property.SetValue(value, propertyValue);
         }
 
-        private object ReadPropertyValue(OcadStreamReader reader, Type type, string propertyName)
+        private object ReadPropertyValue(OcadStreamReader reader, Type type, string propertyName, T value)
         {
             object propertyValue = null;
             if (type == typeof(Int16))
@@ -196,12 +223,12 @@ namespace OcadParser
             }
             else if (type.IsArray)
             {
-                var length = this.arrayLengths[propertyName];
+                var length = this.arrayLengths[propertyName](value);
                 var array = Array.CreateInstance(type.GetElementType(), length);
 
                 for (var i = 0; i < length; i ++)
                 {
-                    array.SetValue(this.ReadPropertyValue(reader, type.GetElementType(), null), i);
+                    array.SetValue(this.ReadPropertyValue(reader, type.GetElementType(), null, value), i);
                 }
 
                 propertyValue = array;
@@ -268,7 +295,9 @@ namespace OcadParser
 
         public BinaryParser<T> SetArrayLength(Expression<Func<T, object>> property, int length)
         {
-            this.arrayLengths[GetPropertyName(property)] = length;
+            var param = Expression.Parameter(typeof (T));
+            var value = Expression.Constant(length);
+            SetArrayLength(property, Expression.Lambda<Func<T, int>>(value, param).Compile()); 
             return this;
         }
 
@@ -281,25 +310,34 @@ namespace OcadParser
             this.listIndexes[name] = getIndexes;
             if (castMapping != null)
             {
-                this.listTypeMappings[name] = BuildAccessor<object, Type>(castMapping.Method);
+                this.listTypeMappings[name] = BuildAccessor<object, Type, T2, Type>(castMapping);
             }
             return this;
         }
 
-        private static Func<T1, T2> BuildAccessor<T1, T2>(MethodInfo method)
+        private Func<T1, T2> BuildAccessor<T1, T2, T3, T4>(Func<T3, T4> method)
         {
             ParameterExpression obj = Expression.Parameter(typeof(T1), "obj");
 
             Expression<Func<T1, T2>> expr =
                 Expression.Lambda<Func<T1, T2>>(
                     Expression.Convert(
-                        Expression.Call(null,
-                            method,
-                            Expression.Convert(obj, method.GetParameters()[0].ParameterType)),
+                        Expression.Call(
+                                Expression.Constant(method.Target),
+                                method.Method,
+                            Expression.Convert(obj, method.Method.GetParameters()[0].ParameterType)),
                         typeof(T2)),
                     obj);
 
             return expr.Compile();
+        }
+
+        private Dictionary<Expression<Func<T, object>>, Expression<Func<T, IEnumerable<OcadFileStringIndex>>>>
+            specialStringListMapping = new Dictionary<Expression<Func<T, object>>, Expression<Func<T, IEnumerable<OcadFileStringIndex>>>>(); 
+
+        public void ConfigureSpecialStringList(Expression<Func<T, object>>  stringList, Expression<Func<T, IEnumerable<OcadFileStringIndex>>> stringIndexes)
+        {
+            specialStringListMapping[stringList] = stringIndexes;
         }
     }
 }
