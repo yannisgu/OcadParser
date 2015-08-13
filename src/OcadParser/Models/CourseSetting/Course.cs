@@ -6,5 +6,10 @@ namespace OcadParser.Models.CourseSetting
     {
         public List<CourseSettingObject> Objects { get; set; }
         public string Name { get; set; }
+        public string Climb { get; set; }
+        public string ExtraDistance { get; set; }
+        public string FirstStartNumber { get; set; }
+        public string ControlDescriptionCourseName { get; set; }
+        public string Combination { get; set; }
     }
 }

@@ -26,11 +26,32 @@ namespace OcadParser.Models.CourseSetting
                         course.CourseSettingObjects.Select(_ => CourseSettingObjects.FirstOrDefault(o => o.Code == _))
                             .ToList(),
                     Name = course.CourseName,
-
+                    Climb = course.Climb,
+                    ExtraDistance = course.ExtraDistance,
+                    FirstStartNumber = course.FromStartNumber,
+                    ControlDescriptionCourseName = course.ClassNameForControlDescription,
+                    Combination = course.Combination
                 };
                 Courses.Add(newCourse);
             }
+
+            foreach (var item in ocadFile.Strings.Where(_ => _.Record is CsClassSSR))
+            {
+                var recClass = (CsClassSSR)item.Record;
+                var newClass = new Class()
+                {
+                    ClassName = recClass.ClassName,
+                    Course =   Courses.FirstOrDefault(_ => _.Name == recClass.CourseName),
+                    FromNumber = recClass.FromNumber,
+                    NumberOfRunners = recClass.NumberOfRunners,
+                    ToNumber = recClass.ToNumber
+                };
+
+                Classes.Add(newClass);
+            }
         }
+
+        public List<Class> Classes { get; } = new List<Class>();
 
         public List<Course> Courses { get; } = new List<Course>();
 
@@ -87,9 +108,18 @@ namespace OcadParser.Models.CourseSetting
                 }
 
                 newObject.Code = csObject.Code;
-                newObject.Object = Objects[item.ObjectIndex];
+                newObject.Object = Objects[item.ObjectIndex - 1];
                 CourseSettingObjects.Add(newObject);
             }
         }
+    }
+
+    public class Class
+    {
+        public string ClassName { get; set; }
+        public Course Course{ get; set; }
+        public string NumberOfRunners { get; set; }
+        public string FromNumber { get; set; }
+        public string ToNumber { get; set; }
     }
 }
