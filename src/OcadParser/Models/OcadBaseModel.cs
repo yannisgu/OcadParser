@@ -23,9 +23,35 @@ namespace OcadParser.Models
 
         public virtual void Load(OcadFile ocadFile)
         {
+            LoadColors(ocadFile);
             LoadSymbols(ocadFile);
             LoadObjects(ocadFile);
         }
+
+        private void LoadColors(OcadFile ocadFile)
+        {
+            foreach(var color in ocadFile.Strings.Where(_ => _.Record is ColorSSR))
+            {
+                var colorRecord = (ColorSSR)color.Record;
+
+                var colorModel = new OcadColor()
+                {
+                    Name = colorRecord.Name,
+                    Number = short.Parse(colorRecord.Number),
+                    Cyan = colorRecord.Cyan,
+                    Magenta = colorRecord.Magenta,
+                    Yellow = colorRecord.Yellow,
+                    Black = colorRecord.Black,
+                    Overprint = colorRecord.Overprint,
+                    Transparency = colorRecord.Transparency,
+                    SpotColorSeparationName = colorRecord.SpotColorSeparationName,
+                    PercentageInTheSpotColorSeparation = colorRecord.PercentageInTheSpotColorSeparation,
+                };
+                Colors.Add(colorModel);
+            }
+        }
+
+        public List<OcadColor> Colors { get; set; }
 
         private void LoadObjects(OcadFile ocadFile)
         {
@@ -69,7 +95,19 @@ namespace OcadParser.Models
                 }
                 else if (symbol is OcadFilePointSymbol)
                 {
-                    newSymbol = new PointSymbol();
+                    newSymbol = new PointSymbol()
+                    {
+                        Elements =
+                            ((OcadFilePointSymbol) symbol).Elements.Select(_ => new SymbolElement()
+                            {
+                                Poly = _.Poly,
+                                Diameter = _.Diameter,
+                                Flags = (SymbolElement.SymbolElementFlag) _.Flags,
+                                LineWidth = _.LineWidth,
+                                Type = (SymbolElement.SymbolElementType)_.Type,
+                                Color = Colors.FirstOrDefault(c => c.Number == _.Color)
+                            }).ToList()
+                    };
                 }
                 else if (symbol is OcadFileRectangleSymbol)
                 {
