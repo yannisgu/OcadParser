@@ -29,7 +29,7 @@ namespace OcadParser
             this.IsPointDashLine = (metaYByte & 8) == 8;
 
             this.X = new TdPolyPoint(bytes.Take(3));
-            this.Y = new TdPolyPoint(bytes.Take(3));
+            this.Y = new TdPolyPoint(bytes.Skip(4).Take(3));
         }
 
         public TdPolyPoint X { get; set; }

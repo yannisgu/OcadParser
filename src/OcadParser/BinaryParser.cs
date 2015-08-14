@@ -41,7 +41,7 @@ namespace OcadParser
 
             returnValue.SetupBinaryParser(this);
             this.ReadSimplePropertiesByOrder(reader, returnValue);
-
+            ReadAllDynamicLists(reader, returnValue);
             this.ReadAllPropertiesWithStartIndex(reader, returnValue);
 
             this.ReadAllIndexBlocks(reader, returnValue);
@@ -51,6 +51,24 @@ namespace OcadParser
             ReadSpecialStringLists(returnValue, reader);
             
             return returnValue;
+        }
+
+        private void ReadAllDynamicLists(OcadStreamReader reader, T value)
+        {
+            foreach (var listConfig in dynamicLists)
+            {
+                var listPropertyName = listConfig.Key;
+                var property = typeof(T).GetProperty(listPropertyName);
+                var itemType = property.PropertyType.GetGenericArguments()[0];
+                var listType = typeof(List<>).MakeGenericType(itemType);
+                var list = property.GetValue(value);
+
+                while (listConfig.Value(value))
+                {
+                    var itemValue = this.ReadPropertyValue(reader, itemType, null, value);
+                    listType.GetMethod("Add").Invoke(list, new[] {itemValue});
+                }
+            }
         }
 
         private void ReadSpecialStringLists(T returnValue, OcadStreamReader reader)
@@ -148,9 +166,7 @@ namespace OcadParser
                     }
 
                     listType.GetMethod("Add").Invoke(list, new[] { itemValue });
-
-
-
+                    
                 }
 
                 property.SetValue(returnValue, list);
@@ -346,6 +362,13 @@ namespace OcadParser
         public void ConfigureSpecialStringList(Expression<Func<T, object>>  stringList, Expression<Func<T, IEnumerable<OcadFileStringIndex>>> stringIndexes)
         {
             specialStringListMapping[stringList] = stringIndexes;
+        }
+
+        private readonly Dictionary<string, Func<T, bool>> dynamicLists = new Dictionary<string, Func<T, bool>>(); 
+
+        public void SetDynamicList(Expression<Func<T, object>> listProperty, Func<T,bool> continueFunc)
+        {
+            dynamicLists[GetPropertyName(listProperty)] = continueFunc;
         }
     }
 }

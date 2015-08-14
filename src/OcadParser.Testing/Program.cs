@@ -14,7 +14,7 @@ namespace OcadParser.Testing
         static void Main(string[] args)
         {
             OcadCourseSettingProject project = new OcadCourseSettingProject();
-            using (var stream = new FileStream(@"D:\OneDrive\OL\OLGM\MurtnerOl\Murtner OL 2014.ocd", FileMode.Open))
+            using (var stream = new FileStream(@"D:\temp\target.ocd", FileMode.Open))
             {
                 var reader = new OcadStreamReader(stream);
                 var parser = new BinaryParser<OcadFile>();

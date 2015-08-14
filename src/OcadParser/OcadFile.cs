@@ -28,7 +28,6 @@ namespace OcadParser
             parser.SetIndexes(_ => _.OcadFileSymbolIndex, _ => _.OcadFileSymbolIndex.Select(s => s.NextSymbolIndex));
             parser.SetIndexes(_ => _.OcadFileObjectIndex, _ => _.OcadFileObjectIndex.Select(o => o.NextObjectIndexBlock));
             parser.SetIndexes(_ => _.OcadFileStringIndex, _ => _.OcadFileStringIndex.Select(o => o.NextIndexBlock));
-       
 
             parser.ConfigureSpecialStringList(_ => _.Strings, _ => _.OcadFileStringIndex.SelectMany(i => i.Table));
 
