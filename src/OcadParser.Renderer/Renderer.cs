@@ -47,7 +47,7 @@ namespace OcadParser.Renderer
             {
                 RenderPointSymbol((OcadFilePointSymbol)symbol, poly);
             }
-            else if (symbol is LineSymbol)
+            else if (symbol is OcadFileLineSymbol)
             {
                 
             }

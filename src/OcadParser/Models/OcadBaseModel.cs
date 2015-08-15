@@ -8,10 +8,6 @@ namespace OcadParser.Models
 {
     public abstract class OcadBaseProject
     {
-        public List<Symbol> SymbolsOld { get; } = new List<Symbol>();
-
-        public List<OcadObject> ObjectsOld { get; } = new List<OcadObject>();
-
         public OcadFile File { get; private set; }
 
         public virtual void Load(OcadFile ocadFile)
@@ -20,8 +16,6 @@ namespace OcadParser.Models
             Symbols = ocadFile.Symbols;
             Objects = ocadFile.Objects;
             LoadColors(ocadFile);
-            LoadSymbols(ocadFile);
-            LoadObjects(ocadFile);
         }
 
         public List<OcadFileOcadObject> Objects { get; set; }
@@ -52,80 +46,6 @@ namespace OcadParser.Models
         }
 
         public List<OcadColor> Colors { get;  } = new List<OcadColor>();
-
-        private void LoadObjects(OcadFile ocadFile)
-        {
-            ObjectsOld.Clear();
-            var objectIndexBlocks = ocadFile.OcadFileObjectIndex.SelectMany(_ => _.OcadFileObjectIndex).ToArray();
-            for (var i = 0; i < ocadFile.Objects.Count; i++)
-            {
-                var obj = ocadFile.Objects[i];
-                var objIndexBlock = objectIndexBlocks[i];
-
-                ObjectsOld.Add(new OcadObject()
-                {
-                    Symbol = SymbolsOld.FirstOrDefault(_ => _.Code == GetSymbolNumber(obj.Sym)),
-                    Poly = obj.Poly,
-                    Status = (OcadObject.OcadObjectStatus)objIndexBlock.Status
-                });    
-            }
-        }
-
-        private float GetSymbolNumber(int symbol)
-        {
-            return (float)symbol/1000;
-        }
-
-        private void LoadSymbols(OcadFile ocadFile)
-        {
-            SymbolsOld.Clear();
-            foreach (var symbol in ocadFile.Symbols)
-            {
-                Symbol newSymbol;
-                if (symbol is OcadFileAreaSymbol)
-                {
-                    newSymbol = new AreaSymbol();
-                }
-                else if (symbol is OcadFileLineSymbol)
-                {
-                    newSymbol = new LineSymbol(this, (OcadFileLineSymbol)symbol);
-                }
-                else if (symbol is OcadFileLineTextSymbol)
-                {
-                    newSymbol = new FileLineTextSymbol();
-                }
-                else if (symbol is OcadFilePointSymbol)
-                {
-                    newSymbol = new PointSymbol()
-                    {
-                        Elements =
-                            ((OcadFilePointSymbol) symbol).Elements.Select(_ => new SymbolElement()
-                            {
-                                Poly = _.Poly,
-                                Diameter = _.Diameter,
-                                Flags = (SymbolElement.SymbolElementFlag) _.Flags,
-                                LineWidth = _.LineWidth,
-                                Type = (SymbolElement.SymbolElementType)_.Type,
-                                Color = Colors.FirstOrDefault(c => c.Number == _.Color)
-                            }).ToList()
-                    };
-                }
-                else if (symbol is OcadFileRectangleSymbol)
-                {
-                    newSymbol = new RectangleSymbol();
-                }
-                else if (symbol is OcadFileTextSymbol)
-                {
-                    newSymbol = new FileTextSymbol();
-                }
-                else
-                {
-                    newSymbol = new Symbol();
-                }
-                newSymbol.Code = GetSymbolNumber(symbol.SymNum);
-                newSymbol.Description = new string(symbol.Description);
-                SymbolsOld.Add(newSymbol);
-            }
-        }
+        
     }
 }
