@@ -8,25 +8,25 @@ namespace OcadParser.Models
 {
     public abstract class OcadBaseProject
     {
-        private readonly List<Symbol> _symbols = new List<Symbol>();
-        private readonly List<OcadObject> _objects = new List<OcadObject>();
+        public List<Symbol> SymbolsOld { get; } = new List<Symbol>();
 
-        public List<Symbol> Symbols
-        {
-            get { return _symbols; }
-        }
+        public List<OcadObject> ObjectsOld { get; } = new List<OcadObject>();
 
-        public List<OcadObject> Objects
-        {
-            get { return _objects; }
-        }
+        public OcadFile File { get; private set; }
 
         public virtual void Load(OcadFile ocadFile)
         {
+            File = ocadFile;
+            Symbols = ocadFile.Symbols;
+            Objects = ocadFile.Objects;
             LoadColors(ocadFile);
             LoadSymbols(ocadFile);
             LoadObjects(ocadFile);
         }
+
+        public List<OcadFileOcadObject> Objects { get; set; }
+
+        public List<OcadFileBaseSymbol> Symbols { get; set; }
 
         private void LoadColors(OcadFile ocadFile)
         {
@@ -38,12 +38,12 @@ namespace OcadParser.Models
                 {
                     Name = colorRecord.Name,
                     Number = short.Parse(colorRecord.Number),
-                    Cyan = colorRecord.Cyan,
-                    Magenta = colorRecord.Magenta,
-                    Yellow = colorRecord.Yellow,
-                    Black = colorRecord.Black,
+                    Cyan = double.Parse(colorRecord.Cyan) / 100,
+                    Magenta = double.Parse(colorRecord.Magenta) / 100,
+                    Yellow = double.Parse(colorRecord.Yellow) / 100,
+                    Black = double.Parse(colorRecord.Black) / 100,
                     Overprint = colorRecord.Overprint,
-                    Transparency = colorRecord.Transparency,
+                    Transparency = float.Parse(colorRecord.Transparency) / 100,
                     SpotColorSeparationName = colorRecord.SpotColorSeparationName,
                     PercentageInTheSpotColorSeparation = colorRecord.PercentageInTheSpotColorSeparation,
                 };
@@ -51,33 +51,34 @@ namespace OcadParser.Models
             }
         }
 
-        public List<OcadColor> Colors { get; set; }
+        public List<OcadColor> Colors { get;  } = new List<OcadColor>();
 
         private void LoadObjects(OcadFile ocadFile)
         {
-            Objects.Clear();
+            ObjectsOld.Clear();
             var objectIndexBlocks = ocadFile.OcadFileObjectIndex.SelectMany(_ => _.OcadFileObjectIndex).ToArray();
             for (var i = 0; i < ocadFile.Objects.Count; i++)
             {
                 var obj = ocadFile.Objects[i];
                 var objIndexBlock = objectIndexBlocks[i];
 
-                Objects.Add(new OcadObject()
+                ObjectsOld.Add(new OcadObject()
                 {
-                    Symbol = Symbols.FirstOrDefault(_ => _.Code == GetSymbolNumber(obj.Sym))
+                    Symbol = SymbolsOld.FirstOrDefault(_ => _.Code == GetSymbolNumber(obj.Sym)),
+                    Poly = obj.Poly,
+                    Status = (OcadObject.OcadObjectStatus)objIndexBlock.Status
                 });    
             }
         }
 
         private float GetSymbolNumber(int symbol)
         {
-            // ReSharper disable once PossibleLossOfFraction
-            return symbol/1000;
+            return (float)symbol/1000;
         }
 
         private void LoadSymbols(OcadFile ocadFile)
         {
-            Symbols.Clear();
+            SymbolsOld.Clear();
             foreach (var symbol in ocadFile.Symbols)
             {
                 Symbol newSymbol;
@@ -87,7 +88,7 @@ namespace OcadParser.Models
                 }
                 else if (symbol is OcadFileLineSymbol)
                 {
-                    newSymbol = new FileLineSymbol();
+                    newSymbol = new LineSymbol(this, (OcadFileLineSymbol)symbol);
                 }
                 else if (symbol is OcadFileLineTextSymbol)
                 {
@@ -123,7 +124,7 @@ namespace OcadParser.Models
                 }
                 newSymbol.Code = GetSymbolNumber(symbol.SymNum);
                 newSymbol.Description = new string(symbol.Description);
-                Symbols.Add(newSymbol);
+                SymbolsOld.Add(newSymbol);
             }
         }
     }

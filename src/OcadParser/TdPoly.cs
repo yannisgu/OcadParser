@@ -16,23 +16,44 @@ namespace OcadParser
 
         public TdPoly(byte[] bytes)
         {
-            var metaXByte = bytes.Skip(3).First();
+            var metaXByte = bytes.First();
             this.IsFirstBezierCurvePoint = (metaXByte & 1) == 1;
             this.IsSecondBezierCurvePoint = (metaXByte & 2) == 2;
             this.IsLeftLineHiddenUntillNextPoint = (metaXByte & 4) == 4;
             this.IsAreaBorderOrVirtualGapLine = (metaXByte & 8) == 8;
 
-            var metaYByte = bytes.Skip(7).First();
+            var metaYByte = bytes.Skip(4).First();
             this.IsCornerPoint = (metaYByte & 1) == 1;
             this.IsFirstPointInAreaHole = (metaYByte & 2) == 2;
             this.IsRightLineHiddenUntilNextPoint = (metaYByte & 4) == 4;
             this.IsPointDashLine = (metaYByte & 8) == 8;
 
-            this.X = new TdPolyPoint(bytes.Take(3));
-            this.Y = new TdPolyPoint(bytes.Skip(4).Take(3));
+            this.X = new TdPolyPoint(bytes.Skip(1).Take(3).ToArray());
+            this.Y = new TdPolyPoint(bytes.Skip(5).Take(3).ToArray());
         }
 
-        public TdPolyPoint X { get; set; }
-        public TdPolyPoint Y { get; set; }
+        public TdPoly(TdPolyPoint x, TdPolyPoint y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public TdPolyPoint X { get; private set; }
+        public TdPolyPoint Y { get; private set; }
+
+        public TdPoly MoveBy(TdPoly point)
+        {
+            return new TdPoly(X.Coordinate + point.X.Coordinate, Y.Coordinate+  point.Y.Coordinate)
+            {
+                IsAreaBorderOrVirtualGapLine = IsAreaBorderOrVirtualGapLine,
+                IsCornerPoint = IsCornerPoint,
+                IsFirstBezierCurvePoint = IsFirstBezierCurvePoint,
+                IsFirstPointInAreaHole = IsFirstPointInAreaHole,
+                IsLeftLineHiddenUntillNextPoint = IsLeftLineHiddenUntillNextPoint,
+                IsPointDashLine = IsPointDashLine,
+                IsRightLineHiddenUntilNextPoint = IsRightLineHiddenUntilNextPoint,
+                IsSecondBezierCurvePoint = IsSecondBezierCurvePoint
+            };
+        }
     }
 }

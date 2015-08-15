@@ -3,7 +3,7 @@
     public class CourseSettingObject
     {
         public string Code { get; set; }
-        public OcadObject Object { get; set; }
+        public OcadFileOcadObject Object { get; set; }
     }
 
     public class StartObject : CourseSettingObject

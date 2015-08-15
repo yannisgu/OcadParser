@@ -1,4 +1,7 @@
-﻿namespace OcadParser
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace OcadParser
 {
     using System;
 
@@ -100,7 +103,14 @@
         // Each symbol header counts as 2 coordinates (16 bytes).
         public Byte UseSymbolFlags { get; set; }
 
+        public Byte Reserved { get; set; }
         // 1 = end symbol, 2 = start symbol, 4 = corner symbol, 8 = secondary symbol   
+
+        public List<OcadFileSymbolElement> MainSymbols { get; set; } = new List<OcadFileSymbolElement>();
+        public List<OcadFileSymbolElement> SecondarySymbols { get; set; } = new List<OcadFileSymbolElement>();
+        public List<OcadFileSymbolElement> CornerSymbols { get; set; } = new List<OcadFileSymbolElement>();
+        public List<OcadFileSymbolElement> StartSymbols { get; set; } = new List<OcadFileSymbolElement>();
+        public List<OcadFileSymbolElement> EndSymbols { get; set; } = new List<OcadFileSymbolElement>();
 
         public void SetupBinaryParser(BinaryParser<OcadFileLineSymbol> parser)
         {
@@ -159,13 +169,21 @@
                 _ => _.CornerDSize,
                 _ => _.StartDSize,
                 _ => _.EndDSize,
-                _ => _.UseSymbolFlags);
+                _ => _.UseSymbolFlags,
+                _ => _.Reserved);
 
 
             parser.SetArrayLength(_ => _.Colors, 14);
             parser.SetArrayLength(_ => _.Description, 64);
             parser.SetArrayLength(_ => _.IconBits, 484);
             parser.SetArrayLength(_ => _.SymbolTreeGroup, 64);
+
+            parser.SetDynamicList(_ => _.MainSymbols, _ => _.MainSymbols.Sum(e => e.NumberPoly + 2) < _.PrimDSize);
+            parser.SetDynamicList(_ => _.SecondarySymbols,
+                _ => _.SecondarySymbols.Sum(e => e.NumberPoly + 2) < _.SecDSize);
+            parser.SetDynamicList(_ => _.CornerSymbols, _ => _.CornerSymbols.Sum(e => e.NumberPoly + 2) < _.CornerDSize);
+            parser.SetDynamicList(_ => _.StartSymbols, _ => _.StartSymbols.Sum(e => e.NumberPoly + 2) < _.StartDSize);
+            parser.SetDynamicList(_ => _.EndSymbols, _ => _.EndSymbols.Sum(e => e.NumberPoly + 2) < _.EndDSize);
         }
     }
 }

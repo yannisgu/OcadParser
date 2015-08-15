@@ -31,7 +31,10 @@ namespace OcadParser
         public int Height { get; set; } // Height [1/256 mm]                      
         public double _Date { get; set; } // not used
         public TdPoly[] Poly { get; set; } // array[0..] coordinates of the object followed by a zero-terminated string
-        // if nText > 0 TCord is explained at the beginning of this description
+                                           // if nText > 0 TCord is explained at the beginning of this description
+
+        public byte Status { get; set; }
+
         public void SetupBinaryParser(BinaryParser<OcadFileOcadObject> parser)
         {
             parser.SetPropertyOrder(
@@ -53,5 +56,11 @@ namespace OcadParser
 
             parser.SetArrayLength(_ => _.Poly, _ => _.nItem);
         }
+
+        public struct OcadFileObjectStatus
+        {
+            public static byte Normal = 1;
+        }
+        
     }
 }

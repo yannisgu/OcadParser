@@ -6,16 +6,23 @@
 
     public class TdPolyPoint
     {
-
-        public int Coordinate { get; set; }
-
-        public TdPolyPoint(IEnumerable<byte> value)
+        public static implicit operator TdPolyPoint(int x)
         {
-            var numberBytes = new List<byte>() { new byte() };
-            numberBytes.AddRange(value.Take(3));
-            this.Coordinate = BitConverter.ToInt32(numberBytes.ToArray(), 0);
-            
+            return new TdPolyPoint(x);
+        }
 
+
+        public int Coordinate { get; private set; }
+
+        public TdPolyPoint(byte[] value)
+        {
+            var num = (value[0] << 8) + (value[0 + 1] << 16) + (value[0 + 2] << 24);
+            Coordinate = num >> 8;
+        }
+
+        public TdPolyPoint(int coordinate)
+        {
+            Coordinate = coordinate;
         }
     }
 }

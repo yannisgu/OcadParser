@@ -82,4 +82,13 @@ namespace OcadParser
             parser.SetArrayLength(_ => _.Poly, _ => _.NumberPoly);
         }
     }
+
+    public struct OcadFileSymbolElementType
+    {
+
+        public const byte Line = 1;
+        public const byte Area = 2;
+        public const byte Circle = 3;
+        public const byte Dot = 4;
+    }
 }

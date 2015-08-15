@@ -56,6 +56,15 @@ namespace OcadParser
                         }
                         return null;
                     });
+
+            parser.AddAfterParseFunction(_ =>
+            {
+                var objectIndex = _.OcadFileObjectIndex.SelectMany(i => i.OcadFileObjectIndex).Where(i => i.Position != 0).ToArray();
+                for (var i = 0; i < objectIndex.Length; i++)
+                {
+                    _.Objects[i].Status = objectIndex[i].Status;
+                }
+            });
         }
     }
 }

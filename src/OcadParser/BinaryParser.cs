@@ -49,7 +49,9 @@ namespace OcadParser
             this.ReadAllLists(returnValue, reader);
 
             ReadSpecialStringLists(returnValue, reader);
-            
+
+            afterActions.ForEach(_ => _(returnValue));
+
             return returnValue;
         }
 
@@ -369,6 +371,11 @@ namespace OcadParser
         public void SetDynamicList(Expression<Func<T, object>> listProperty, Func<T,bool> continueFunc)
         {
             dynamicLists[GetPropertyName(listProperty)] = continueFunc;
+        }
+        private readonly List<Action<T>> afterActions = new List<Action<T>>(); 
+        public void AddAfterParseFunction(Action<T> action)
+        {
+            afterActions.Add(action);
         }
     }
 }

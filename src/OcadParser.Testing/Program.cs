@@ -27,7 +27,6 @@ namespace OcadParser.Testing
             {
                 Console.WriteLine(symbol.Description);
             }
-            var foo =project.CourseSettingObjects.GroupBy(_ => _.Object.Symbol.Code);
         }
     }
 }
