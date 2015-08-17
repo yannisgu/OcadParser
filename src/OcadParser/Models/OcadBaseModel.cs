@@ -37,12 +37,22 @@ namespace OcadParser.Models
                     Yellow = double.Parse(colorRecord.Yellow) / 100,
                     Black = double.Parse(colorRecord.Black) / 100,
                     Overprint = colorRecord.Overprint,
-                    Transparency = float.Parse(colorRecord.Transparency) / 100,
+                    Transparency = ParseFloat(colorRecord.Transparency) / 100,
                     SpotColorSeparationName = colorRecord.SpotColorSeparationName,
                     PercentageInTheSpotColorSeparation = colorRecord.PercentageInTheSpotColorSeparation,
                 };
                 Colors.Add(colorModel);
             }
+        }
+
+        private float ParseFloat(string text, float defaultValue = default(float))
+        {
+            float returnValue;
+            if (!float.TryParse(text, out returnValue))
+            {
+                returnValue = defaultValue;
+            }
+            return returnValue;
         }
 
         public List<OcadColor> Colors { get;  } = new List<OcadColor>();

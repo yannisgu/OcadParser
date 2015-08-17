@@ -24,11 +24,11 @@ namespace OcadParser
 
         public int CurrentFileVersion { get; set; } // file version for OCAD version
 
-        public long Res2 { get; set; } // not used
+        public int Res2 { get; set; } // not used
 
-        public long Res3 { get; set; } // not used
+        public int Res3 { get; set; } // not used
 
-        public long PositionFirstStringIndexBlock { get; set; }
+        public int PositionFirstStringIndexBlock { get; set; }
 
         public int PositionFileName { get; set; } // file position of the file name, used for temporary files only
 

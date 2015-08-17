@@ -4,6 +4,8 @@ namespace OcadParser
 
     public class TdPoly
     {
+        private TdPoly tdPoly;
+
         public bool IsFirstBezierCurvePoint { get; set; }
         public bool IsSecondBezierCurvePoint { get; set; }
         public bool IsLeftLineHiddenUntillNextPoint { get; set; }
@@ -38,22 +40,24 @@ namespace OcadParser
             Y = y;
         }
 
+        public TdPoly(TdPolyPoint x, TdPolyPoint y, TdPoly basePoly) : this(x, y)
+        {
+            IsAreaBorderOrVirtualGapLine = basePoly.IsAreaBorderOrVirtualGapLine;
+            IsCornerPoint = basePoly.IsCornerPoint;
+            IsFirstBezierCurvePoint = basePoly.IsFirstBezierCurvePoint;
+            IsFirstPointInAreaHole = basePoly.IsFirstPointInAreaHole;
+            IsLeftLineHiddenUntillNextPoint = basePoly.IsLeftLineHiddenUntillNextPoint;
+            IsPointDashLine = basePoly.IsPointDashLine;
+            IsRightLineHiddenUntilNextPoint = basePoly.IsRightLineHiddenUntilNextPoint;
+            IsSecondBezierCurvePoint = basePoly.IsSecondBezierCurvePoint;
+        }
+
         public TdPolyPoint X { get; private set; }
         public TdPolyPoint Y { get; private set; }
 
         public TdPoly MoveBy(TdPoly point)
         {
-            return new TdPoly(X.Coordinate + point.X.Coordinate, Y.Coordinate+  point.Y.Coordinate)
-            {
-                IsAreaBorderOrVirtualGapLine = IsAreaBorderOrVirtualGapLine,
-                IsCornerPoint = IsCornerPoint,
-                IsFirstBezierCurvePoint = IsFirstBezierCurvePoint,
-                IsFirstPointInAreaHole = IsFirstPointInAreaHole,
-                IsLeftLineHiddenUntillNextPoint = IsLeftLineHiddenUntillNextPoint,
-                IsPointDashLine = IsPointDashLine,
-                IsRightLineHiddenUntilNextPoint = IsRightLineHiddenUntilNextPoint,
-                IsSecondBezierCurvePoint = IsSecondBezierCurvePoint
-            };
+            return new TdPoly(X.Coordinate + point.X.Coordinate, Y.Coordinate + point.Y.Coordinate, this);
         }
     }
 }

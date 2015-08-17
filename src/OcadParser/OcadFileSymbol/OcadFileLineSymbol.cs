@@ -37,9 +37,9 @@ namespace OcadParser
 
         public Int16 PrimSymDist { get; set; } // Distance
 
-        public uint DblMode { get; set; } // Mode (Double line page)
+        public ushort DblMode { get; set; } // Mode (Double line page)
 
-        public uint DblFlags { get; set; } // Double line flags
+        public ushort DblFlags { get; set; } // Double line flags
         //    1: Fill color on
         //    2: Background color on
         public Int16 DblFillColor { get; set; } // Fill color

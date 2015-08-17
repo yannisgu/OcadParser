@@ -47,9 +47,11 @@
     <Compile Include="Models\OcadBaseModel.cs" />
     <Compile Include="Models\OcadColor.cs" />
     <Compile Include="Models\OMap\OcadOMap.cs" />
+    <Compile Include="OcadFileHatchMode.cs" />
     <Compile Include="OcadFileHeader.cs" />
     <Compile Include="OcadFileOcadObject.cs" />
     <Compile Include="OcadFileReader.cs" />
+    <Compile Include="OcadFileSymbolStatus.cs" />
     <Compile Include="SpecialStrings\OcadFileSpecialString.cs" />
     <Compile Include="SpecialStrings\OcadFileSpecialStringMappingAttribute.cs" />
     <Compile Include="SpecialStrings\OcadFileStringIndexBlocks.cs" />

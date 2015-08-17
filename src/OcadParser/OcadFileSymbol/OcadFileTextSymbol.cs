@@ -4,7 +4,7 @@ namespace OcadParser
 
     public class OcadFileTextSymbol : OcadFileBaseSymbol, IBinaryParsable<OcadFileTextSymbol>
     {
-        public char[] FontName { get; set; } // TrueType font
+        public byte[] FontName { get; set; } // TrueType font
 
         public Int16 FontColor { get; set; } // Color
 
@@ -154,7 +154,7 @@ namespace OcadParser
             parser.SetArrayLength(_ => _.Description, 64);
             parser.SetArrayLength(_ => _.IconBits, 484);
             parser.SetArrayLength(_ => _.SymbolTreeGroup, 64);
-            parser.SetArrayLength(_ => _.FontName, 31);
+            parser.SetArrayLength(_ => _.FontName, 32);
             parser.SetArrayLength(_ => _.Tabs, 32);
             parser.SetArrayLength(_ => _.Res3, 18);
         }

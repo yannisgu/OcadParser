@@ -13,10 +13,10 @@ namespace OcadParser.Samples.Renderer
     {
         static void Main(string[] args)
         {
-            var project = new OcadFileReader(@"D:\temp\target.ocd").ReadProject();
+            var project = new OcadFileReader(@"D:\temp\testmap.ocd").ReadProject();
             var renderer = new OcadRenderer(project);
             Bitmap bitmap = renderer.GetBitmap();
-            bitmap.Save(@"D:\temp\target.png");
+            bitmap.Save(@"D:\temp\target2.png");
         }
     }
 }

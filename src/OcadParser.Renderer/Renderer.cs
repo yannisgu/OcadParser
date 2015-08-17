@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 using OcadParser.Models;
+using RP.Math;
 using Svg;
 using Svg.Pathing;
 using Svg.Transforms;
@@ -15,6 +17,8 @@ namespace OcadParser.Renderer
     {
         private readonly OcadBaseProject project;
         private SvgDocument svg;
+
+        private readonly List<KeyValuePair<int, SvgElement>> elements = new List<KeyValuePair<int, SvgElement>>(); 
 
         public OcadRenderer(OcadBaseProject project)
         {
@@ -37,30 +41,363 @@ namespace OcadParser.Renderer
         {
             foreach (var ocadObject in project.Objects.Where(_ => _.Status == OcadFileOcadObject.OcadFileObjectStatus.Normal))
             {
-                RenderSymbol(project.Symbols.FirstOrDefault(_ => _.SymNum == ocadObject.Sym), ocadObject.Poly);
+                RenderSymbol(project.Symbols.FirstOrDefault(_ => _.SymNum == ocadObject.Sym), ocadObject.Poly, new string(ocadObject.Chars), (float)ocadObject.Ang / 10);
+            }
+            foreach (var element in elements.OrderByDescending(_ => _.Key).Select(_ => _.Value))
+            {
+                Svg.Children.Add(element);
             }
         }
 
-        private void RenderSymbol(OcadFileBaseSymbol symbol, TdPoly[] poly)
+        private void RenderSymbol(OcadFileBaseSymbol symbol, TdPoly[] poly, string text, float angle)
         {
-            if (symbol is OcadFilePointSymbol)
+            if (symbol != null && symbol.Status != OcadFileSymbolStatus.Hidden)
             {
-                RenderPointSymbol((OcadFilePointSymbol)symbol, poly);
-            }
-            else if (symbol is OcadFileLineSymbol)
-            {
-                
+                if (symbol is OcadFilePointSymbol)
+                {
+                    RenderPointSymbol((OcadFilePointSymbol) symbol, poly, angle);
+                }
+                else if (symbol is OcadFileLineSymbol)
+                {
+                    RenderLineSymbol((OcadFileLineSymbol) symbol, poly);
+                }
+                else if (symbol is OcadFileAreaSymbol)
+                {
+                    RenderAreaSymol((OcadFileAreaSymbol) symbol, poly);
+                }
+                else if (symbol is OcadFileTextSymbol)
+                {
+                    RenderText((OcadFileTextSymbol) symbol, poly, text,angle);
+                }
+                else if (symbol is OcadFileLineTextSymbol)
+                {
+
+                }
             }
         }
 
-        
-        private void RenderPointSymbol(OcadFilePointSymbol symbol, TdPoly[] poly)
+        private void RenderText(OcadFileTextSymbol symbol, TdPoly[] poly, string text, float angle)
+        {
+            var points = poly.Select(GetSvgUnit).ToList();
+            var element = new SvgText()
+            {
+                X = new SvgUnitCollection(),
+                Y = new SvgUnitCollection(),
+                FontFamily =  new string(symbol.FontName.Skip(1).Select(_ => (char)_).ToArray()).TrimEnd('\0'),
+                Transforms = new SvgTransformCollection() { new SvgRotate(-angle, points.First().X, points.First().Y) },
+                FontSize =  (int)(symbol.FontSize * 10 * 0.376),
+                Fill = new SvgColourServer(GetColor(symbol.FontColor))
+            };
+            element.X.Add(points.Select(_ => _.X).First());
+            element.Y.Add(points.Select(_ => _.Y).First());
+            var i = 0;
+            foreach (var line in text.Split('\n'))
+            {
+                var fixedLine = line.Replace("\t", "");
+
+                var tSpan = new SvgTextSpan();
+                tSpan.SpaceHandling = XmlSpaceHandling.preserve;
+                if (i != 0)
+                {
+                    tSpan.Dy =
+                        new SvgUnitCollection
+                        { new SvgUnit((int) (symbol.FontSize*10*0.376))};
+                    tSpan.X = new SvgUnitCollection
+                    { new SvgUnit(points.Select(_ => _.X).First())};
+                    
+                }
+                tSpan.Nodes.Add(new SvgContentNode() {Content = fixedLine });
+                element.Children.Add(tSpan);
+                i++;
+            }
+            elements.Add( new KeyValuePair<int, SvgElement>(GetDrawIndex(symbol.FontColor), element));
+        }
+
+        private void RenderAreaSymol(OcadFileAreaSymbol symbol, TdPoly[] poly)
+        {
+            if (symbol.FillOn)
+            {   
+                var area = new SvgPath()
+                {
+                    PathData = GetPathData(poly),
+                    Fill = new SvgColourServer(GetColor(symbol.FillColor))
+                };
+                elements.Add(new KeyValuePair<int, SvgElement>(
+                    GetDrawIndex(symbol.FillColor),
+                    area));
+            }
+            if (symbol.HatchMode == OcadFileHatchMode.Cross || symbol.HatchMode == OcadFileHatchMode.Single)
+            {
+                RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle1, poly);
+                if (symbol.HatchMode == OcadFileHatchMode.Cross)
+                {
+                    RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle2, poly);
+                }
+            }
+        }
+
+        private void RenderHatch(short hatchDist, short hatchLineWidth, short hatchColor, short origAngle, TdPoly[] poly)
+        {
+            var angle = (float)origAngle/10;
+            var pattern = new SvgPatternServer()
+            {
+                PatternUnits = SvgCoordinateUnits.UserSpaceOnUse,
+                Width = 10,
+                Height = hatchDist,
+                PatternTransform = new SvgTransformCollection()
+                {
+                    new SvgRotate(-angle)
+                }
+            };
+
+            var line = new SvgLine()
+            {
+                Stroke = new SvgColourServer(GetColor(hatchColor)),
+                StrokeWidth = hatchLineWidth,
+                StartX = 0,
+                EndX = 10,
+                StartY = hatchLineWidth / 2,
+                EndY = hatchLineWidth / 2,
+            };
+            pattern.Children.Add(line);
+
+            elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex(hatchColor), new SvgPath()
+            {
+                PathData = GetPathData(poly),
+                Fill = pattern
+            }));
+
+            return;/*
+            var angle = origAngle/10;
+            if (angle > 180)
+            {
+                angle = (short) (angle - 180);
+            }
+            
+            var width = hatchDist;
+            var lineWidth = hatchDist - hatchLineWidth;
+            double height;
+            if (angle != 0 && angle != 90)
+            {
+                height = Math.Tan(Math.PI*angle/180.0)*lineWidth;
+            }
+            else
+            {
+                height = lineWidth;
+            }
+            var patternHeight = height;
+            var pattern = new SvgPatternServer()
+            {
+                PatternUnits = SvgCoordinateUnits.UserSpaceOnUse,
+                Width = width,
+                Height = (float)patternHeight
+            };
+            var startX = angle <=
+                         90
+                ? hatchLineWidth/2
+                : width - hatchLineWidth/2;
+            var line = new SvgLine()
+            {
+                Stroke = new SvgColourServer(GetColor(hatchColor)),
+                StrokeWidth = hatchLineWidth,
+                StartX = startX,
+                EndX = width-startX,
+                StartY = 0,
+                EndY = (float)patternHeight,
+            };
+            pattern.Children.Add(line);
+            
+            elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex(hatchColor), new SvgPath()
+            {
+                PathData = GetPathData(poly),
+                Fill = pattern
+            }));*/
+        }
+
+        private void RenderLineSymbol(OcadFileLineSymbol symbol, TdPoly[] poly)
+        {
+            if (symbol.LineWidth > 0)
+            {
+                var line = new SvgPath()
+                {
+                    PathData = GetPathData(poly),
+                    Stroke = new SvgColourServer(GetColor(symbol.LineColor)),
+                    StrokeWidth = symbol.LineWidth,
+                    Fill = SvgPaintServer.None
+                };
+                if (symbol.MainGap > 0)
+                {
+                    line.StrokeDashArray = new SvgUnitCollection()
+                    {
+                        new SvgUnit(symbol.MainLength),
+                        new SvgUnit(symbol.MainGap)
+                    };
+                }
+                elements.Add(new KeyValuePair<int, SvgElement>(
+                    GetDrawIndex(symbol.LineColor),
+                    line));
+            }
+            if (symbol.DblMode != 0)
+            {
+                RenderDoubleLine(symbol, poly);
+            }
+
+        }
+
+        private void RenderDoubleLine(OcadFileLineSymbol symbol, TdPoly[] poly)
+        {
+            var line = new SvgPath()
+            {
+                PathData = GetPathData(poly),
+                Stroke = new SvgColourServer(GetColor(symbol.DblFillColor)),
+                StrokeWidth = symbol.DblWidth,
+                Fill = SvgPaintServer.None
+            };
+            elements.Add(new KeyValuePair<int, SvgElement>(
+                GetDrawIndex(symbol.DblFillColor),
+                line));
+
+            var newPoly = MoveBezierPoly(poly, (symbol.DblWidth / 2) + (symbol.DblLeftWidth / 2), symbol.DblWidth);
+            var lineLeft = new SvgPath()
+            {
+                PathData = GetPathData(newPoly),
+                Stroke = new SvgColourServer(GetColor(symbol.DblLeftColor)),
+                StrokeWidth = symbol.DblLeftWidth,
+                Fill = SvgPaintServer.None
+            };
+            elements.Add(new KeyValuePair<int, SvgElement>(
+                GetDrawIndex(symbol.DblLeftColor),
+                lineLeft));
+
+            var polyRight = MoveBezierPoly(poly, -((symbol.DblWidth / 2) + (symbol.DblLeftWidth / 2)), symbol.DblWidth);
+            var lineRight = new SvgPath()
+            {
+                PathData = GetPathData(polyRight),
+                Stroke = new SvgColourServer(GetColor(symbol.DblRightColor)),
+                StrokeWidth = symbol.DblRightWidth,
+                Fill = SvgPaintServer.None
+            };
+            elements.Add(new KeyValuePair<int, SvgElement>(
+                GetDrawIndex(symbol.DblRightColor),
+                lineRight));
+        }
+
+        private TdPoly[] MoveBezierPoly(TdPoly[] poly, int moveByBase, int lineWidth)
+        {
+            var newPoly = new List<TdPoly>();
+            
+            for (var i = 0; i < poly.Length; i++)
+            {
+                Vector3 moveDirectionVector;
+                double factor;
+                var originalPoint = GetVector(poly[i]);
+
+                if (i == 0)
+                {
+                    var firstPoint = GetVector(poly[0]);
+                    var secondPoint = GetVector(poly[1]);
+                    var firstPointVector = (firstPoint - secondPoint);
+                    moveDirectionVector = new Vector3(firstPointVector.Y, -firstPointVector.X, 0);
+                    factor = moveByBase;
+                }
+                else if (i + 1 == poly.Length)
+                {
+                    var secondLastPoint = GetVector(poly[i-1]);
+                    var secondLastPointVector = (secondLastPoint - originalPoint);
+                    moveDirectionVector = new Vector3(secondLastPointVector.Y, -secondLastPointVector.X, 0);
+                    factor = moveByBase;
+                }
+                else
+                {
+                    var vectorBefore = GetVector(poly[i - 1]);
+                    var vectorAfter = GetVector(poly[i + 1]);
+                    var vectorToBefore = vectorBefore - originalPoint;
+                    var vectorToAfter =  vectorAfter - originalPoint;
+                    moveDirectionVector = vectorToBefore.Scale(1) + vectorToAfter.Scale(1);
+
+                    var dp1 = vectorToAfter.X * vectorToBefore.Y;
+                    var dp2 = vectorToBefore.X * vectorToAfter.Y;
+
+                    if (dp1 - dp2 >= 0)
+                    {
+                        moveDirectionVector =   vectorToBefore.Scale(1) + vectorToAfter.Scale(1);
+                    }
+                    else
+                    {
+                        moveDirectionVector = -vectorToBefore.Scale(1) + -vectorToAfter.Scale(1);
+                    }
+                    
+                    var angle = vectorToBefore.Angle(vectorToAfter);
+                    factor = moveByBase / Math.Sin(angle/2);
+
+                    if (moveDirectionVector == Vector3.Zero)
+                    {
+                        moveDirectionVector = new Vector3(vectorToBefore.Y, -vectorToBefore.X, 0); ;
+                    }
+
+                }
+
+                Vector3 moveVector;
+                if (factor < 0)
+                {
+                    moveVector = -moveDirectionVector.Scale(-factor);
+                }
+                else
+                {
+                    moveVector = moveDirectionVector.Scale(factor);
+
+                }
+                var newPoint = originalPoint + moveVector;
+                newPoly.Add(new TdPoly((int)newPoint.X, (int)newPoint.Y, poly[i]));
+            }
+
+            /*for (var i = 0; i < poly.Length; i++)
+            {
+                var originalPoint = GetVector(poly[i]);
+
+                Vector3 vectorBefore;
+                if (i == 0)
+                {
+                    vectorBefore = GetVector(poly[i]);
+                }
+                else
+                {
+                    vectorBefore = GetVector(poly[i - 1]);
+                }
+                Vector3 vectorAfter;
+                if (i + 1 == poly.Length)
+                {
+                    vectorAfter = GetVector(poly[i]);
+                }
+                else
+                {
+                    vectorAfter = GetVector(poly[i + 1]);
+                }
+                var vectorReference = vectorAfter - vectorBefore;
+                var vectorMoveDirection = new Vector3(vectorReference.X, -vectorReference.Y, 0);
+                var moveVector = vectorMoveDirection.Scale(moveBy);
+                var originalPoint = GetVector(poly[i]);
+                var newPoint = originalPoint + moveVector;
+                newPoly.Add(new TdPoly((int) newPoint.X, (int) newPoint.Y, poly[i]));
+            }*/
+
+            return newPoly.ToArray();
+        }
+
+        private static Vector3 GetVector(TdPoly poly)
+        {
+            return new Vector3(poly.X.Coordinate, poly.Y.Coordinate, 0);
+        }
+
+
+        private void RenderPointSymbol(OcadFilePointSymbol symbol, TdPoly[] poly, float angle)
         {
             var point = poly[0];
             var svgPoint = GetSvgUnit(point);
 
             foreach (var element in symbol.Elements)
             {
+                SvgElement svgElement = null;
                 switch (element.Type)
                 {
                     case OcadFileSymbolElementType.Circle:
@@ -74,7 +411,7 @@ namespace OcadParser.Renderer
                             Stroke = new SvgColourServer(GetColor(element.Color)),
                             StrokeWidth = element.LineWidth
                         };
-                        svg.Children.Add(circle);
+                        svgElement = circle;
                         break;
                     case OcadFileSymbolElementType.Area:
                         var area = new SvgPath()
@@ -82,7 +419,7 @@ namespace OcadParser.Renderer
                             PathData = GetPathData(element.Poly.Select(_ => _.MoveBy(point)).ToArray()),
                             Fill = new SvgColourServer(GetColor(element.Color))
                         };
-                        svg.Children.Add(area);
+                       svgElement = area;
                         break;
                     case OcadFileSymbolElementType.Line:
                         var line = new SvgPath()
@@ -92,7 +429,7 @@ namespace OcadParser.Renderer
                             StrokeWidth = element.LineWidth,
                             Fill = SvgPaintServer.None
                         };
-                        svg.Children.Add(line);
+                        svgElement = line;
                         break;
                     case OcadFileSymbolElementType.Dot:
                         center = GetSvgUnit(element.Poly[0]);
@@ -103,10 +440,28 @@ namespace OcadParser.Renderer
                             Radius = element.Diameter / 2,
                             Fill = new SvgColourServer(GetColor(element.Color))
                         };
-                        svg.Children.Add(dot);
+                       svgElement =dot;
                         break;
                 }
+
+                if (svgElement != null)
+                {
+                    if (angle != 0)
+                    {
+                        svgElement.Transforms = new SvgTransformCollection()
+                        {
+                            new SvgRotate(-angle, svgPoint.X, svgPoint.Y)
+                        };
+                    }
+                    elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex(element.Color), svgElement));
+                }
+
             }
+        }
+
+        private int GetDrawIndex(short color)
+        {
+            return project.Colors.FindIndex(_ => _.Number == color);
         }
 
         private Color GetColor(short color)
@@ -117,6 +472,13 @@ namespace OcadParser.Renderer
         private SvgPathSegmentList GetPathData(TdPoly[] poly)
         {
             var pathSegmentList = new SvgPathSegmentList();
+            /*
+            for (var i = 1; i < poly.Length; i++)
+            {
+                pathSegmentList.Add(new SvgLineSegment(
+                   new PointF(poly[i-1].X.Coordinate, -poly[i-1].Y.Coordinate),
+                   new PointF(poly[i].X.Coordinate, -poly[i].Y.Coordinate) ));
+            }*/
             PointF start = GetPoint(poly[0]);
             pathSegmentList.Add(new SvgMoveToSegment(start));
             int i = 1;
@@ -181,8 +543,21 @@ namespace OcadParser.Renderer
 
         public Bitmap GetBitmap()
         {
-            Svg.ViewBox = new SvgViewBox(Svg.Bounds.X,Svg.Bounds.Y, Svg.Bounds.Width, Svg.Bounds.Height);
+            var minX = project.File.Objects.Min(_ => _.Poly.Min(p => p.X.Coordinate));
+            var minY = -project.File.Objects.Max(_ => _.Poly.Max(p => p.Y.Coordinate));
+            var maxX = project.File.Objects.Max(_ => _.Poly.Max(p => p.X.Coordinate));
+            var maxY = -project.File.Objects.Min(_ => _.Poly.Min(p => p.Y.Coordinate));
+            Svg.ViewBox = new SvgViewBox(minX, minY, maxX- minX, maxY - minY);
+            Svg.Width =  GetPixel(maxX - minX);
+            Svg.Height = GetPixel(maxY - minY);
             return Svg.Draw();
+        }
+
+        private SvgUnit GetPixel(int ocadUnit)
+        {
+            var mm = (float) ocadUnit/100;
+            var inch = mm*0.0393700787;
+            return new SvgUnit(SvgUnitType.Pixel, (float)inch*450); // 300dpi
         }
     }
 }

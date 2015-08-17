@@ -206,6 +206,18 @@ namespace OcadParser
 
         private object ReadPropertyValue(OcadStreamReader reader, Type type, string propertyName, T value)
         {
+            if (propertyName != null && propertyEnabledList.ContainsKey(propertyName))
+            {
+                if (!propertyEnabledList[propertyName](value))
+                {
+                    if (type.IsValueType)
+                    {
+                        return Activator.CreateInstance(type);
+                    }
+                    return null;
+                }
+            }
+
             object propertyValue = null;
             if (type == typeof(Int16))
             {
@@ -249,15 +261,38 @@ namespace OcadParser
             }
             else if (type.IsArray)
             {
-                var length = this.arrayLengths[propertyName](value);
-                var array = Array.CreateInstance(type.GetElementType(), length);
-
-                for (var i = 0; i < length; i ++)
+                if (arrayLengths.ContainsKey(propertyName))
                 {
-                    array.SetValue(this.ReadPropertyValue(reader, type.GetElementType(), null, value), i);
-                }
+                    var length = this.arrayLengths[propertyName](value);
+                    var array = Array.CreateInstance(type.GetElementType(), length);
 
-                propertyValue = array;
+                    for (var i = 0; i < length; i ++)
+                    {
+                        array.SetValue(this.ReadPropertyValue(reader, type.GetElementType(), null, value), i);
+                    }
+
+                    propertyValue = array;
+                }
+                else
+                {
+                    var arrayValue = ReadPropertyValue(reader, type.GetElementType(), null, value);
+                    List<object> arrayValues = new List<object>()
+                    {
+                        arrayValue
+                    };
+                    while (Convert.ToInt32(arrayValue) != 0)
+                    {
+                        arrayValue = ReadPropertyValue(reader, type.GetElementType(), null, value);
+                        arrayValues.Add(arrayValue);
+                    }
+                    var length = arrayValues.Count - 1;
+                    var array = Array.CreateInstance(type.GetElementType(), length);
+                    for (var i = 0; i < length; i ++)
+                    {
+                        array.SetValue(arrayValues[i], i);
+                    }
+                    propertyValue = array;
+                }
             }
             else if (type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IBinaryParsable<>)))
             {
@@ -372,10 +407,17 @@ namespace OcadParser
         {
             dynamicLists[GetPropertyName(listProperty)] = continueFunc;
         }
-        private readonly List<Action<T>> afterActions = new List<Action<T>>(); 
+        private readonly List<Action<T>> afterActions = new List<Action<T>>();
+        private Dictionary<string, Func<T, bool>> propertyEnabledList = new Dictionary<string,Func<T,bool>>();
+
         public void AddAfterParseFunction(Action<T> action)
         {
             afterActions.Add(action);
+        }
+
+        public void AddPropertyEnabledFunction(Expression<Func<T, object>> property, Func<T, bool> propertyEnabled)
+        {
+            propertyEnabledList[GetPropertyName(property)] = propertyEnabled;
         }
     }
 }

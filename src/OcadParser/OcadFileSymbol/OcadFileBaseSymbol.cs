@@ -14,7 +14,7 @@ namespace OcadParser
 
         public byte Flags { get; set; } // 1: rotatable symbol (not oriented to north)
         // 4: belongs to favorites
-        public bool Selected { get; set; } // Symbol is selected in the symbol box
+        public byte Selected { get; set; } // Symbol is selected in the symbol box
 
         public byte Status { get; set; } // Status of the symbol
         //   0: Normal
@@ -66,7 +66,7 @@ namespace OcadParser
 
         public Byte notUsed2 { get; set; }
 
-        public byte nColors { get; set; } // Number of colors of the symbol max. 14, -1: the number of colors is > 14
+        public Int16 nColors { get; set; } // Number of colors of the symbol max. 14, -1: the number of colors is > 14
 
         public Int16[] Colors { get; set; } // Colors of the symbol
 
