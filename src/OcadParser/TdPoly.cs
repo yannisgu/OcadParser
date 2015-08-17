@@ -6,15 +6,15 @@ namespace OcadParser
     {
         private TdPoly tdPoly;
 
-        public bool IsFirstBezierCurvePoint { get; set; }
-        public bool IsSecondBezierCurvePoint { get; set; }
-        public bool IsLeftLineHiddenUntillNextPoint { get; set; }
-        public bool IsAreaBorderOrVirtualGapLine { get; set; }
+            public bool IsFirstBezierCurvePoint { get; set; }
+            public bool IsSecondBezierCurvePoint { get; set; }
+            public bool IsLeftLineHiddenUntillNextPoint { get; set; }
+            public bool IsAreaBorderOrVirtualGapLine { get; set; }
 
-        public bool IsCornerPoint { get; set; }
-        public bool IsFirstPointInAreaHole { get; set; }
-        public bool IsRightLineHiddenUntilNextPoint { get; set; }
-        public bool IsPointDashLine { get; set; }
+            public bool IsCornerPoint { get; set; }
+            public bool IsFirstPointInAreaHole { get; set; }
+            public bool IsRightLineHiddenUntilNextPoint { get; set; }
+            public bool IsPointDashLine { get; set; }
 
         public TdPoly(byte[] bytes)
         {
@@ -58,6 +58,24 @@ namespace OcadParser
         public TdPoly MoveBy(TdPoly point)
         {
             return new TdPoly(X.Coordinate + point.X.Coordinate, Y.Coordinate + point.Y.Coordinate, this);
+        }
+
+        public override bool Equals(object polyObject)
+        {
+            var poly = polyObject as TdPoly;
+            if (poly == null)
+            {
+                return false;
+            }
+
+            return X.Equals(poly.X) && Y.Equals(poly.Y) && IsFirstBezierCurvePoint == poly.IsFirstBezierCurvePoint &&
+                   IsSecondBezierCurvePoint == poly.IsSecondBezierCurvePoint &&
+                   IsLeftLineHiddenUntillNextPoint == poly.IsLeftLineHiddenUntillNextPoint &&
+                   IsAreaBorderOrVirtualGapLine == poly.IsAreaBorderOrVirtualGapLine &&
+                   IsCornerPoint == poly.IsCornerPoint &&
+                   IsFirstPointInAreaHole == poly.IsFirstPointInAreaHole &&
+                   IsRightLineHiddenUntilNextPoint == poly.IsRightLineHiddenUntilNextPoint &&
+                   IsPointDashLine == poly.IsPointDashLine;
         }
     }
 }

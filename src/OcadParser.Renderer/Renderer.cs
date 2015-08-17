@@ -553,6 +553,26 @@ namespace OcadParser.Renderer
             return Svg.Draw();
         }
 
+        public Bitmap GetBitmap(OcadFileOcadObject obj, int targetWidth)
+        {
+            var minX = obj.Poly.Min(p => p.X.Coordinate);
+            var minY = obj.Poly.Max(p => p.Y.Coordinate);
+            var maxX = obj.Poly.Max(p => p.X.Coordinate);
+            var maxY = obj.Poly.Min(p => p.Y.Coordinate);
+            Svg.ViewBox = new SvgViewBox(minX, minY, maxX - minX, maxY - minY);
+            Svg.Width = targetWidth;
+            Svg.Height = targetWidth * ((maxY - minY) / (maxX - minX));
+            return Svg.Draw();
+        }
+
+        public Bitmap GetBitmap(int minX, int minY, int maxX, int maxY, int targetWidth)
+        {
+            Svg.ViewBox = new SvgViewBox(minX, minY, maxX - minX, maxY - minY);
+            Svg.Width = targetWidth;
+            Svg.Height = targetWidth * ((float)(maxY - minY) / (maxX - minX));
+            return Svg.Draw();
+        }
+
         private SvgUnit GetPixel(int ocadUnit)
         {
             var mm = (float) ocadUnit/100;

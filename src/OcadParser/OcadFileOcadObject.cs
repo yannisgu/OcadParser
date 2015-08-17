@@ -32,7 +32,7 @@ namespace OcadParser
         public double _Date { get; set; } // not used
         public TdPoly[] Poly { get; set; } // array[0..] coordinates of the object followed by a zero-terminated string
 
-        public char[] Chars { get; set; }                       // if nText > 0 TCord is explained at the beginning of this description
+        public char[] Chars { get; set; } // if nText > 0 TCord is explained at the beginning of this description
 
         public byte Status { get; set; }
 
@@ -41,18 +41,18 @@ namespace OcadParser
             parser.SetPropertyOrder(
                 _ => _.Sym,
                 _ => _.Otp,
-                _ => _.Customer, 
+                _ => _.Customer,
                 _ => _.Ang,
                 _ => _.nItem,
                 _ => _.nText,
-                _ => _.Mark, 
+                _ => _.Mark,
                 _ => _.SnappingMark,
                 _ => _.Col,
                 _ => _.LineWidth,
                 _ => _.DiamFlags,
-                _ => _.ServerObjectId, 
-                _ => _.Height, 
-                _ => _._Date, 
+                _ => _.ServerObjectId,
+                _ => _.Height,
+                _ => _._Date,
                 _ => _.Poly,
                 _ => _.Chars);
 
@@ -65,6 +65,36 @@ namespace OcadParser
         {
             public static byte Normal = 1;
         }
-        
+
+        public override bool Equals(object otherObject)
+        {
+            var ocadObject = otherObject as OcadFileOcadObject;
+            if (ocadObject == null)
+            {
+                return false;
+            }
+
+            if (Poly.Length != ocadObject.Poly.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < Poly.Length; i++)
+            {
+                if (!Poly[i].Equals(ocadObject.Poly[i]))
+                {
+                    return false;
+                }
+            }
+
+            if (Sym != ocadObject.Sym)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+
     }
 }

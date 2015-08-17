@@ -6,6 +6,16 @@
 
     public class TdPolyPoint
     {
+        protected bool Equals(TdPolyPoint other)
+        {
+            return Coordinate == other.Coordinate;
+        }
+
+        public override int GetHashCode()
+        {
+            return Coordinate;
+        }
+
         public static implicit operator TdPolyPoint(int x)
         {
             return new TdPolyPoint(x);
@@ -23,6 +33,11 @@
         public TdPolyPoint(int coordinate)
         {
             Coordinate = coordinate;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (obj as TdPolyPoint)?.Coordinate == Coordinate;
         }
     }
 }
