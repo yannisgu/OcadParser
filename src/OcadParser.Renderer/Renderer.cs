@@ -27,13 +27,19 @@ namespace OcadParser.Renderer
 
         public SvgDocument Svg
         {
-            get {
-                if (svg == null)
-                {
-                    svg = new SvgDocument();
-                    RenderSvg();
-                }
+            get
+            {
+                EnsureSvg();
                 return svg;
+            }
+        }
+
+        public void EnsureSvg()
+        {
+            if (svg == null)
+            {
+                svg = new SvgDocument();
+                RenderSvg();
             }
         }
 
@@ -41,7 +47,7 @@ namespace OcadParser.Renderer
         {
             foreach (var ocadObject in project.Objects.Where(_ => _.Status == OcadFileOcadObject.OcadFileObjectStatus.Normal))
             {
-                RenderSymbol(project.Symbols.FirstOrDefault(_ => _.SymNum == ocadObject.Sym), ocadObject.Poly, new string(ocadObject.Chars), (float)ocadObject.Ang / 10);
+                RenderSymbol(project.Symbols.FirstOrDefault(_ => _.SymNum == ocadObject.Sym), ocadObject.Poly, new string(ocadObject.Chars), (float)ocadObject.Ang / 10, ocadObject);
             }
             foreach (var element in elements.OrderByDescending(_ => _.Key).Select(_ => _.Value))
             {
@@ -49,34 +55,46 @@ namespace OcadParser.Renderer
             }
         }
 
-        private void RenderSymbol(OcadFileBaseSymbol symbol, TdPoly[] poly, string text, float angle)
+        private void RenderSymbol(OcadFileBaseSymbol symbol, TdPoly[] poly, string text, float angle, OcadFileOcadObject obj)
         {
             if (symbol != null && symbol.Status != OcadFileSymbolStatus.Hidden)
             {
+                IEnumerable<Tuple<int, SvgElement>> elementsOfThisSymbol = null;
+
                 if (symbol is OcadFilePointSymbol)
                 {
-                    RenderPointSymbol((OcadFilePointSymbol) symbol, poly, angle);
+                    elementsOfThisSymbol = RenderPointSymbol((OcadFilePointSymbol) symbol, poly, angle);
                 }
                 else if (symbol is OcadFileLineSymbol)
                 {
-                    RenderLineSymbol((OcadFileLineSymbol) symbol, poly);
+                    elementsOfThisSymbol = RenderLineSymbol((OcadFileLineSymbol) symbol, poly);
                 }
                 else if (symbol is OcadFileAreaSymbol)
                 {
-                    RenderAreaSymol((OcadFileAreaSymbol) symbol, poly);
+                    elementsOfThisSymbol = RenderAreaSymol((OcadFileAreaSymbol) symbol, poly);
                 }
                 else if (symbol is OcadFileTextSymbol)
                 {
-                    RenderText((OcadFileTextSymbol) symbol, poly, text,angle);
+                    elementsOfThisSymbol = RenderText((OcadFileTextSymbol) symbol, poly, text,angle);
                 }
                 else if (symbol is OcadFileLineTextSymbol)
                 {
+                }
 
+                if (elementsOfThisSymbol != null)
+                {
+                    var elementsOfThisSymbolArray = elementsOfThisSymbol.ToArray();
+                    foreach (var element in elementsOfThisSymbolArray)
+                    {
+                        elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex((short) element.Item1),
+                            element.Item2));
+                    }
+                    ObjectElementMapping[obj] = elementsOfThisSymbolArray.Select(_ => _.Item2).ToList();
                 }
             }
         }
 
-        private void RenderText(OcadFileTextSymbol symbol, TdPoly[] poly, string text, float angle)
+        private IEnumerable<Tuple<int, SvgElement>> RenderText(OcadFileTextSymbol symbol, TdPoly[] poly, string text, float angle)
         {
             var points = poly.Select(GetSvgUnit).ToList();
             var element = new SvgText()
@@ -110,10 +128,11 @@ namespace OcadParser.Renderer
                 element.Children.Add(tSpan);
                 i++;
             }
-            elements.Add( new KeyValuePair<int, SvgElement>(GetDrawIndex(symbol.FontColor), element));
+            yield return new Tuple<int, SvgElement>(
+                symbol.FontColor, element);
         }
 
-        private void RenderAreaSymol(OcadFileAreaSymbol symbol, TdPoly[] poly)
+        private IEnumerable<Tuple<int, SvgElement>> RenderAreaSymol(OcadFileAreaSymbol symbol, TdPoly[] poly)
         {
             if (symbol.FillOn)
             {   
@@ -122,21 +141,21 @@ namespace OcadParser.Renderer
                     PathData = GetPathData(poly),
                     Fill = new SvgColourServer(GetColor(symbol.FillColor))
                 };
-                elements.Add(new KeyValuePair<int, SvgElement>(
-                    GetDrawIndex(symbol.FillColor),
-                    area));
+                yield return new Tuple<int, SvgElement>(
+                    symbol.FillColor,
+                    area);
             }
             if (symbol.HatchMode == OcadFileHatchMode.Cross || symbol.HatchMode == OcadFileHatchMode.Single)
             {
-                RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle1, poly);
+                yield return RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle1, poly);
                 if (symbol.HatchMode == OcadFileHatchMode.Cross)
                 {
-                    RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle2, poly);
+                    yield return RenderHatch(symbol.HatchDist, symbol.HatchLineWidth, symbol.HatchColor, symbol.HatchAngle2, poly);
                 }
             }
         }
 
-        private void RenderHatch(short hatchDist, short hatchLineWidth, short hatchColor, short origAngle, TdPoly[] poly)
+        private Tuple<int, SvgElement> RenderHatch(short hatchDist, short hatchLineWidth, short hatchColor, short origAngle, TdPoly[] poly)
         {
             var angle = (float)origAngle/10;
             var pattern = new SvgPatternServer()
@@ -161,13 +180,11 @@ namespace OcadParser.Renderer
             };
             pattern.Children.Add(line);
 
-            elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex(hatchColor), new SvgPath()
+            return new Tuple<int, SvgElement>(hatchColor, new SvgPath()
             {
                 PathData = GetPathData(poly),
                 Fill = pattern
-            }));
-
-            return;/*
+            });/*
             var angle = origAngle/10;
             if (angle > 180)
             {
@@ -214,7 +231,7 @@ namespace OcadParser.Renderer
             }));*/
         }
 
-        private void RenderLineSymbol(OcadFileLineSymbol symbol, TdPoly[] poly)
+        private IEnumerable<Tuple<int, SvgElement>> RenderLineSymbol(OcadFileLineSymbol symbol, TdPoly[] poly)
         {
             if (symbol.LineWidth > 0)
             {
@@ -233,18 +250,21 @@ namespace OcadParser.Renderer
                         new SvgUnit(symbol.MainGap)
                     };
                 }
-                elements.Add(new KeyValuePair<int, SvgElement>(
-                    GetDrawIndex(symbol.LineColor),
-                    line));
+                yield return new Tuple<int, SvgElement>(
+                    symbol.LineColor,
+                    line);
             }
             if (symbol.DblMode != 0)
             {
-                RenderDoubleLine(symbol, poly);
+                foreach (var element in RenderDoubleLine(symbol, poly))
+                {
+                    yield return element;
+                }
             }
 
         }
 
-        private void RenderDoubleLine(OcadFileLineSymbol symbol, TdPoly[] poly)
+        private IEnumerable<Tuple<int,SvgElement>> RenderDoubleLine(OcadFileLineSymbol symbol, TdPoly[] poly)
         {
             var line = new SvgPath()
             {
@@ -253,9 +273,9 @@ namespace OcadParser.Renderer
                 StrokeWidth = symbol.DblWidth,
                 Fill = SvgPaintServer.None
             };
-            elements.Add(new KeyValuePair<int, SvgElement>(
-                GetDrawIndex(symbol.DblFillColor),
-                line));
+            yield return new Tuple<int, SvgElement>(
+                symbol.DblFillColor,
+                line);
 
             var newPoly = MoveBezierPoly(poly, (symbol.DblWidth / 2) + (symbol.DblLeftWidth / 2), symbol.DblWidth);
             var lineLeft = new SvgPath()
@@ -265,9 +285,9 @@ namespace OcadParser.Renderer
                 StrokeWidth = symbol.DblLeftWidth,
                 Fill = SvgPaintServer.None
             };
-            elements.Add(new KeyValuePair<int, SvgElement>(
-                GetDrawIndex(symbol.DblLeftColor),
-                lineLeft));
+            yield return new Tuple<int, SvgElement>(
+                symbol.DblLeftColor,
+                lineLeft);
 
             var polyRight = MoveBezierPoly(poly, -((symbol.DblWidth / 2) + (symbol.DblLeftWidth / 2)), symbol.DblWidth);
             var lineRight = new SvgPath()
@@ -277,9 +297,9 @@ namespace OcadParser.Renderer
                 StrokeWidth = symbol.DblRightWidth,
                 Fill = SvgPaintServer.None
             };
-            elements.Add(new KeyValuePair<int, SvgElement>(
-                GetDrawIndex(symbol.DblRightColor),
-                lineRight));
+            yield return new Tuple<int, SvgElement>(
+                symbol.DblRightColor,
+                lineRight);
         }
 
         private TdPoly[] MoveBezierPoly(TdPoly[] poly, int moveByBase, int lineWidth)
@@ -390,7 +410,7 @@ namespace OcadParser.Renderer
         }
 
 
-        private void RenderPointSymbol(OcadFilePointSymbol symbol, TdPoly[] poly, float angle)
+        private IEnumerable<Tuple<int, SvgElement>> RenderPointSymbol(OcadFilePointSymbol symbol, TdPoly[] poly, float angle)
         {
             var point = poly[0];
             var svgPoint = GetSvgUnit(point);
@@ -453,7 +473,8 @@ namespace OcadParser.Renderer
                             new SvgRotate(-angle, svgPoint.X, svgPoint.Y)
                         };
                     }
-                    elements.Add(new KeyValuePair<int, SvgElement>(GetDrawIndex(element.Color), svgElement));
+                    yield return new Tuple<int, SvgElement>(
+                                element.Color, svgElement);
                 }
 
             }
@@ -553,12 +574,14 @@ namespace OcadParser.Renderer
             return Svg.Draw();
         }
 
+        public Dictionary<OcadFileOcadObject, List<SvgElement>> ObjectElementMapping { get; } = new Dictionary<OcadFileOcadObject, List<SvgElement>>(); 
+
         public Bitmap GetBitmap(OcadFileOcadObject obj, int targetWidth)
         {
             var minX = obj.Poly.Min(p => p.X.Coordinate);
-            var minY = obj.Poly.Max(p => p.Y.Coordinate);
+            var minY = -obj.Poly.Max(p => p.Y.Coordinate);
             var maxX = obj.Poly.Max(p => p.X.Coordinate);
-            var maxY = obj.Poly.Min(p => p.Y.Coordinate);
+            var maxY = -obj.Poly.Min(p => p.Y.Coordinate);
             Svg.ViewBox = new SvgViewBox(minX, minY, maxX - minX, maxY - minY);
             Svg.Width = targetWidth;
             Svg.Height = targetWidth * ((maxY - minY) / (maxX - minX));
