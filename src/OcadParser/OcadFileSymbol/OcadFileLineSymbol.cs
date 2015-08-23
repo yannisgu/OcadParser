@@ -64,7 +64,7 @@ namespace OcadParser
 
         public Int16 DblRes2 { get; set; } // Reserved
 
-        public uint DecMode { get; set; } // Decrease mode
+        public ushort DecMode { get; set; } // Decrease mode
         //   0: off
         //   1: decreasing towards the end
         //   2: decreasing towards both ends
@@ -81,23 +81,23 @@ namespace OcadParser
         //   1: round joins/round caps
         //   4: miter joins/flat caps
         //  PointedEnd := LineStyle and 2 > 0;
-        public uint PrimDSize { get; set; }
+        public ushort PrimDSize { get; set; }
 
         // number or coordinates (8 bytes) for the Main symbol A which follow this structure.
         // Each symbol header counts as 2 coordinates (16 bytes).
-        public uint SecDSize { get; set; }
+        public ushort SecDSize { get; set; }
 
         // number or coordinates (8 bytes) for the Secondary symbol which follow the Main symbol A
         // Each symbol header counts as 2 coordinates (16 bytes).
-        public uint CornerDSize { get; set; }
+        public ushort CornerDSize { get; set; }
 
         // number or coordinates (8 bytes) for the Corner symbol which follow the Secondary symbol
         // Each symbol header counts as 2 coordinates (16 bytes).
-        public uint StartDSize { get; set; }
+        public ushort StartDSize { get; set; }
 
         // number or coordinates (8 bytes) for the Start symbol C which follow the Corner symbol
         // Each symbol header counts as 2 coordinates (16 bytes).
-        public uint EndDSize { get; set; }
+        public ushort EndDSize { get; set; }
 
         // number or coordinates (8 bytes) for the End symbol D which follow the Start symbol C
         // Each symbol header counts as 2 coordinates (16 bytes).

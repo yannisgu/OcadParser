@@ -261,7 +261,73 @@ namespace OcadParser.Renderer
                     yield return element;
                 }
             }
+            if (symbol.nPrimSym > 0)
+            {
+                foreach (var objectOnLine in RenderSymbolsOnLine(symbol, poly))
+                {
+                    yield return objectOnLine;
+                }
+            }
 
+        }
+
+        private IEnumerable<Tuple<int, SvgElement>> RenderSymbolsOnLine(OcadFileLineSymbol symbol, TdPoly[] poly)
+        {
+            var bezierCurves = GetBezierCurve(poly);
+            List<PointF> points = new List<PointF>();
+            foreach (var bezierCurve in bezierCurves)
+            {
+                points.AddRange(GetPointsOnBezier(bezierCurve));
+            }
+
+            foreach (var pointsToDraw in GetPointsInDistance(points, symbol.MainLength))
+            {
+                foreach (var mainSymbolElement in symbol.MainSymbols)
+                {
+                    yield return new Tuple<int, SvgElement>(
+                        mainSymbolElement.Color,
+                        GetPointElement(mainSymbolElement, GetSvgUnit(GetPoly(pointsToDraw)), GetPoly(pointsToDraw)));
+                }
+            }
+        }
+
+        private IEnumerable<PointF> GetPointsInDistance(List<PointF> points, short distance)
+        {
+            var currentDistance = 0.0;
+            for(int i = 1; i < points.Count; i++)
+            {
+                var point1 = points[i - 1];
+                var point2 = points[i];
+                var vector1 = GetVector(point1);
+                var vector2 = GetVector(point2);
+                var distanceVec = vector2 - vector1;
+                var distanceBetweenPoints = distanceVec.Magnitude;
+                currentDistance += distanceBetweenPoints;
+                if (currentDistance > distance)
+                {
+                    currentDistance = 0.0;
+                    yield return point2;
+                }
+            }
+        }
+
+        private IEnumerable<PointF> GetPointsOnBezier(List<PointF> points)
+        {
+            for (double t = 0; t <= 1; t += 0.001)
+            {
+                yield return GetCasteljauPoint(points.Count - 1, 0, t, points);
+            }
+        }
+
+
+        private PointF GetCasteljauPoint(int r, int i, double t, List<PointF> points)
+        {
+            if (r == 0) return points[i];
+
+            PointF p1 = GetCasteljauPoint(r - 1, i, t, points);
+            PointF p2 = GetCasteljauPoint(r - 1, i + 1, t, points);
+
+            return new Point((int)((1 - t) * p1.X + t * p2.X), (int)((1 - t) * p1.Y + t * p2.Y));
         }
 
         private IEnumerable<Tuple<int,SvgElement>> RenderDoubleLine(OcadFileLineSymbol symbol, TdPoly[] poly)
@@ -410,6 +476,12 @@ namespace OcadParser.Renderer
         }
 
 
+        private static Vector3 GetVector(PointF point)
+        {
+            return new Vector3(point.X, point.Y, 0);
+        }
+
+
         private IEnumerable<Tuple<int, SvgElement>> RenderPointSymbol(OcadFilePointSymbol symbol, TdPoly[] poly, float angle)
         {
             var point = poly[0];
@@ -417,52 +489,7 @@ namespace OcadParser.Renderer
 
             foreach (var element in symbol.Elements)
             {
-                SvgElement svgElement = null;
-                switch (element.Type)
-                {
-                    case OcadFileSymbolElementType.Circle:
-                        var center = GetSvgUnit(element.Poly[0]);
-                        var circle = new SvgCircle()
-                        {
-                            CenterX = svgPoint.X + center.X,
-                            CenterY = svgPoint.Y + center.Y,
-                            Radius = element.Diameter / 2,
-                            Fill = SvgPaintServer.None,
-                            Stroke = new SvgColourServer(GetColor(element.Color)),
-                            StrokeWidth = element.LineWidth
-                        };
-                        svgElement = circle;
-                        break;
-                    case OcadFileSymbolElementType.Area:
-                        var area = new SvgPath()
-                        {
-                            PathData = GetPathData(element.Poly.Select(_ => _.MoveBy(point)).ToArray()),
-                            Fill = new SvgColourServer(GetColor(element.Color))
-                        };
-                       svgElement = area;
-                        break;
-                    case OcadFileSymbolElementType.Line:
-                        var line = new SvgPath()
-                        {
-                            PathData = GetPathData(element.Poly.Select(_ => _.MoveBy(point)).ToArray()),
-                            Stroke = new SvgColourServer(GetColor(element.Color)),
-                            StrokeWidth = element.LineWidth,
-                            Fill = SvgPaintServer.None
-                        };
-                        svgElement = line;
-                        break;
-                    case OcadFileSymbolElementType.Dot:
-                        center = GetSvgUnit(element.Poly[0]);
-                        var dot = new SvgCircle()
-                        {
-                            CenterX = svgPoint.X + center.X,
-                            CenterY = svgPoint.Y + center.Y,
-                            Radius = element.Diameter / 2,
-                            Fill = new SvgColourServer(GetColor(element.Color))
-                        };
-                       svgElement =dot;
-                        break;
-                }
+                var svgElement = GetPointElement(element, svgPoint, point);
 
                 if (svgElement != null)
                 {
@@ -476,8 +503,58 @@ namespace OcadParser.Renderer
                     yield return new Tuple<int, SvgElement>(
                                 element.Color, svgElement);
                 }
-
             }
+        }
+
+        private SvgElement GetPointElement(OcadFileSymbolElement element, SvgPoint svgPoint, TdPoly point)
+        {
+            SvgElement svgElement = null;
+            switch (element.Type)
+            {
+                case OcadFileSymbolElementType.Circle:
+                    var center = GetSvgUnit(element.Poly[0]);
+                    var circle = new SvgCircle()
+                    {
+                        CenterX = svgPoint.X + center.X,
+                        CenterY = svgPoint.Y + center.Y,
+                        Radius = element.Diameter/2,
+                        Fill = SvgPaintServer.None,
+                        Stroke = new SvgColourServer(GetColor(element.Color)),
+                        StrokeWidth = element.LineWidth
+                    };
+                    svgElement = circle;
+                    break;
+                case OcadFileSymbolElementType.Area:
+                    var area = new SvgPath()
+                    {
+                        PathData = GetPathData(element.Poly.Select(_ => _.MoveBy(point)).ToArray()),
+                        Fill = new SvgColourServer(GetColor(element.Color))
+                    };
+                    svgElement = area;
+                    break;
+                case OcadFileSymbolElementType.Line:
+                    var line = new SvgPath()
+                    {
+                        PathData = GetPathData(element.Poly.Select(_ => _.MoveBy(point)).ToArray()),
+                        Stroke = new SvgColourServer(GetColor(element.Color)),
+                        StrokeWidth = element.LineWidth,
+                        Fill = SvgPaintServer.None
+                    };
+                    svgElement = line;
+                    break;
+                case OcadFileSymbolElementType.Dot:
+                    center = GetSvgUnit(element.Poly[0]);
+                    var dot = new SvgCircle()
+                    {
+                        CenterX = svgPoint.X + center.X,
+                        CenterY = svgPoint.Y + center.Y,
+                        Radius = element.Diameter/2,
+                        Fill = new SvgColourServer(GetColor(element.Color))
+                    };
+                    svgElement = dot;
+                    break;
+            }
+            return svgElement;
         }
 
         private int GetDrawIndex(short color)
@@ -488,6 +565,25 @@ namespace OcadParser.Renderer
         private Color GetColor(short color)
         {
             return GetColor(project.Colors.FirstOrDefault(_ => _.Number == color));
+        }
+
+        private List<List<PointF>> GetBezierCurve(TdPoly[] poly)
+        {
+            var bezier = new List<List<PointF>>();
+            var currentBezier = new List<PointF>();
+            foreach (var tdPoint in poly)
+            {
+                var point = GetPoint(tdPoint);
+                currentBezier.Add(point);
+
+                if (!tdPoint.IsFirstBezierCurvePoint && !tdPoint.IsSecondBezierCurvePoint && currentBezier.Count != 1)
+                {
+                    bezier.Add(currentBezier);
+                    currentBezier = new List<PointF> {point};
+                }
+            }
+
+            return bezier;
         }
 
         private SvgPathSegmentList GetPathData(TdPoly[] poly)
@@ -552,6 +648,10 @@ namespace OcadParser.Renderer
         private PointF GetPoint(TdPoly poly)
         {
             return new PointF(poly.X.Coordinate, -poly.Y.Coordinate);
+        }
+        private TdPoly GetPoly(PointF poly)
+        {
+            return new TdPoly(new TdPolyPoint((int)poly.X), new TdPolyPoint((int)-poly.Y));
         }
 
         private Color GetColor(OcadColor color)
